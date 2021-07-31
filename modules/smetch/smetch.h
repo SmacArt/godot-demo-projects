@@ -3,24 +3,26 @@
 #ifndef SMETCH_H
 #define SMETCH_H
 
+#include "scene/gui/subviewport_container.h"
 #include "scene/main/viewport.h"
-#include "core/io/resource.h"
+#include "scene/gui/panel_container.h"
 
-class Smetch : public Resource {
-  GDCLASS(Smetch, Resource);
-
-  int count;
+class Smetch : public SubViewportContainer {
+	GDCLASS(Smetch, SubViewportContainer);
 
 protected:
-  static void _bind_methods();
+	static void _bind_methods();
 
 public:
-  void add(int p_value);
-  void reset();
-  int get_total() const;
 
-  Smetch();
+  void create_canvas(int x, int y);
+  Vector2 get_mouse_position();
 
+	Smetch();
+
+private:
+  SubViewport *viewport;
+  PanelContainer *panel_container;
 };
 
 #endif // SMETCH_H

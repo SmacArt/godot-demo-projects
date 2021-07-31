@@ -5,7 +5,7 @@
 #include "smetch.h"
 
 void register_smetch_types() {
-  GDREGISTER_CLASS(Smetch);
+	GDREGISTER_CLASS(Smetch);
 }
 
 void unregister_smetch_types() {
