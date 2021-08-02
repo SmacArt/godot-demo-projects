@@ -16,6 +16,7 @@ void Smetch::_bind_methods() {
 void Smetch::create_canvas(int x, int y) {
 	std::cout << "create canvas" << std::endl;
 
+  //xxxxxxxxxxxxxxx
   // todo : if this gets called again then need to clear the old objects
 
   Size2 s2 = Size2(x, y);
