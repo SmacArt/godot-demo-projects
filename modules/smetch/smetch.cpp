@@ -31,21 +31,19 @@ void Smetch::apply_color(float value1, float value2, float value3, float value4)
 		value4 = maxes[3];
 	}
 	if (clr_mode == HSB) {
-		apply_color_hsv_to_rgb(value1, value2, value3, value4);
-	} else { //rgb
-		color_levels[0] = value1 / maxes[0];
-		color_levels[1] = value2 / maxes[1];
-		color_levels[2] = value3 / maxes[2];
-		color_levels[3] = value4 / maxes[3];
+		color.set_hsv(value1 / maxes[0], value2 / maxes[1], value3 / maxes[2], value4 / maxes[3]);
+	} else {
+    // RGB
+		color.r = value1 / maxes[0];
+		color.g = value2 / maxes[1];
+		color.b = value3 / maxes[2];
+		color.a = value4 / maxes[3];
 	}
-
-	//print_line("todo:  use max color levels");
 }
 
 void Smetch::background(float value1, float value2, float value3) {
 	apply_color(value1, value2, value3, -1);
-	Color c = Color(color_levels[0], color_levels[1], color_levels[2], color_levels[3]);
-	panel_container->set_modulate(c);
+	background_rect->set_self_modulate(color);
 }
 
 void Smetch::color_mode(int mode, float value1, float value2, float value3, float value4) {
@@ -88,10 +86,14 @@ void Smetch::create_canvas(int x, int y) {
 	viewport->set_size_2d_override_stretch(true);
 	viewport->set_size(s2);
 
-	panel_container = memnew(PanelContainer);
-	panel_container->set_size(s2);
+	background_rect = memnew(TextureRect);
+  background_rect->set_expand(true);
+	background_rect->set_size(s2);
 
-	viewport->add_child(panel_container);
+  CanvasTexture *background_canvas_texture = memnew(CanvasTexture);
+  background_rect->set_texture(background_canvas_texture);
+
+	viewport->add_child(background_rect);
 	this->add_child(viewport);
 
 	std::cout << "create canvas end" << std::endl;
@@ -116,34 +118,6 @@ void Smetch::rect_mode(int mode) {
 			mode == CENTER) {
 		rct_mode = mode;
 	}
-}
-
-void Smetch::apply_color_hsv_to_rgb(float H, float S, float V, float A) {
-	// todo : note this assumes Hue is always in range of 360 .. so is ignoring
-	//        what has been requested in setup
-	float s = S / maxes[1];
-	float v = V / maxes[2];
-	float C = s * v;
-	float X = C * (1 - abs(fmod(H / 60.0, 2) - 1));
-	float m = v - C;
-	float r, g, b;
-	if (H >= 0 && H < 60) {
-		r = C, g = X, b = 0;
-	} else if (H >= 60 && H < 120) {
-		r = X, g = C, b = 0;
-	} else if (H >= 120 && H < 180) {
-		r = 0, g = C, b = X;
-	} else if (H >= 180 && H < 240) {
-		r = 0, g = X, b = C;
-	} else if (H >= 240 && H < 300) {
-		r = X, g = 0, b = C;
-	} else {
-		r = C, g = 0, b = X;
-	}
-	color_levels[0] = (r + m); // * 255;
-	color_levels[1] = (g + m); // * 255;
-	color_levels[2] = (b + m); // * 255;
-  color_levels[3] = A;
 }
 
 Smetch::Smetch() {}

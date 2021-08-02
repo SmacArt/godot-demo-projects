@@ -3,9 +3,10 @@
 #ifndef SMETCH_H
 #define SMETCH_H
 
-#include "scene/gui/panel_container.h"
+#include "scene/gui/texture_rect.h"
 #include "scene/gui/subviewport_container.h"
 #include "scene/main/viewport.h"
+#include "core/math/color.h"
 
 class Smetch : public SubViewportContainer {
 	GDCLASS(Smetch, SubViewportContainer);
@@ -38,13 +39,13 @@ public:
 private:
 
   void apply_color(float value1, float value2, float value3, float value4);
-  void apply_color_hsv_to_rgb(float H, float S, float V, float A);
 
 	SubViewport *viewport;
-	PanelContainer *panel_container;
+  TextureRect *background_rect;
+
+  Color color;
 
 	int clr_mode = RGB;
-  float color_levels[4];
 	int color_maxes[3][4] = {
 		{ 255, 255, 255, 255 }, // RGB
 		{ 360, 100, 100, 1 }, // HSB
