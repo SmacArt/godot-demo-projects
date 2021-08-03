@@ -28,6 +28,8 @@ public:
 	void background(float value1, float value2, float value3);
 	void color_mode(int mode, float value1, float value2, float value3, float value4);
 	void create_canvas(int x, int y);
+	void fill(float value1, float value2, float value3);
+	void rect(float x, float y, float w, float h);
 	void no_cursor();
   void no_stroke();
   void rect_mode(int mode);
@@ -44,6 +46,7 @@ private:
   TextureRect *background_rect;
 
   Color color;
+  Color fill_color;
 
 	int clr_mode = RGB;
 	int color_maxes[3][4] = {
@@ -54,7 +57,7 @@ private:
   int maxes[4];
 	bool renderer_no_cursor;
   bool renderer_no_stroke;
-  int rct_mode = CENTER;
+  int rct_mode = CORNER;
 };
 
 #endif // SMETCH_H

@@ -54,41 +54,20 @@ void Smetch::fill(float value1, float value2, float value3) {
 }
 
 void Smetch::rect(float x, float y, float w, float h) {
-  if (rct_mode == CORNER) {
-
-    Point2 pos = Point2(x,y);
-    Size2 rect_size = Size2(w,h);
-		Size2 parent_size = get_size(); // TODO : maybe can cache this, but only will work if always the same parent
-
-    if (pos.x + rect_size.x > parent_size.x) {
-      rect_size.x = rect_size.x - (pos.x + rect_size.x - parent_size.x);
-    }
-    if (pos.y + rect_size.y > parent_size.y) {
-      rect_size.y = rect_size.y - (pos.y + rect_size.y - parent_size.y);
-    }
-
-    Rect2 rect = Rect2(pos,rect_size);
-    draw_rect(rect,fill_color);
-
-  } else if (rct_mode == CENTER) {
-		// use x and y as the max w and h radius's
-		if (w > x * 2)
-			w = x * 2;
-		if (h > y * 2)
-			h = y * 2;
-
+	if (rct_mode == CENTER) {
 		Size2 rect_size = Size2(w, h);
-		Size2 parent_size = get_size(); // TODO : maybe can cache this, but only will work if always the same parent
 
-    if (rect_size.x > parent_size.x) rect_size.x = parent_size.x;
-    if (rect_size.y > parent_size.y) rect_size.y = parent_size.y;
+		Size2 parent_size = get_parent_area_size(); // TODO : maybe can cache this, but only will work if always the same parent
 
+		// try and centre this in the parent
+		// if parent is not big enough then this wont scale smaller
+		// TODO : scale to size
 		Point2 pos = Point2(0, 0);
 		if (rect_size.x < parent_size.x) {
-			pos.x = (parent_size.x - rect_size.x) * 0.5;
+			pos.x = (parent_size.x - x) * 0.5;
 		}
 		if (rect_size.y < parent_size.y) {
-			pos.y = (parent_size.y - rect_size.y) * 0.5;
+			pos.y = (parent_size.y - y) * 0.5;
 		}
 		Rect2 rect = Rect2(pos, rect_size);
 		draw_rect(rect, fill_color); // TODO : if no_stroke is false can add a border
@@ -146,7 +125,6 @@ void Smetch::create_canvas(int x, int y) {
 	viewport = memnew(SubViewport);
 	viewport->set_size_2d_override_stretch(true);
 	viewport->set_size(this_size);
-  viewport->set_use_occlusion_culling(true);
 
 	background_rect = memnew(TextureRect);
 	background_rect->set_expand(true);
