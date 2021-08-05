@@ -3,10 +3,6 @@
 #include "smetch.h"
 #include <iostream>
 
-Vector2 Smetch::get_mouse_position() {
-	return viewport->get_mouse_position();
-}
-
 void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("color_mode", "mode", "value1", "value2", "value3", "value4"), &Smetch::color_mode, DEFVAL(RGB), DEFVAL(1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("background"), &Smetch::background);
@@ -16,7 +12,7 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("no_cursor"), &Smetch::no_cursor);
 	ClassDB::bind_method(D_METHOD("no_stroke"), &Smetch::no_stroke);
 	ClassDB::bind_method(D_METHOD("rect_mode"), &Smetch::rect_mode);
-
+	ClassDB::bind_method(D_METHOD("save_canvas"), &Smetch::save_canvas);
 	ClassDB::bind_method(D_METHOD("get_mouse_position"), &Smetch::get_mouse_position);
 
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("RGB"), RGB);
@@ -45,7 +41,7 @@ void Smetch::apply_color(float value1, float value2, float value3, float value4)
 
 void Smetch::background(float value1, float value2, float value3) {
 	apply_color(value1, value2, value3, -1);
-	background_rect->set_self_modulate(color);
+	draw_rect(background_rect, color);
 }
 
 void Smetch::fill(float value1, float value2, float value3) {
@@ -54,23 +50,22 @@ void Smetch::fill(float value1, float value2, float value3) {
 }
 
 void Smetch::rect(float x, float y, float w, float h) {
-  if (rct_mode == CORNER) {
-
-    Point2 pos = Point2(x,y);
-    Size2 rect_size = Size2(w,h);
+	if (rct_mode == CORNER) {
+		Point2 pos = Point2(x, y);
+		Size2 rect_size = Size2(w, h);
 		Size2 parent_size = get_size(); // TODO : maybe can cache this, but only will work if always the same parent
 
-    if (pos.x + rect_size.x > parent_size.x) {
-      rect_size.x = rect_size.x - (pos.x + rect_size.x - parent_size.x);
-    }
-    if (pos.y + rect_size.y > parent_size.y) {
-      rect_size.y = rect_size.y - (pos.y + rect_size.y - parent_size.y);
-    }
+		if (pos.x + rect_size.x > parent_size.x) {
+			rect_size.x = rect_size.x - (pos.x + rect_size.x - parent_size.x);
+		}
+		if (pos.y + rect_size.y > parent_size.y) {
+			rect_size.y = rect_size.y - (pos.y + rect_size.y - parent_size.y);
+		}
 
-    Rect2 rect = Rect2(pos,rect_size);
-    draw_rect(rect,fill_color);
+		Rect2 rect = Rect2(pos, rect_size);
+		draw_rect(rect, fill_color);
 
-  } else if (rct_mode == CENTER) {
+	} else if (rct_mode == CENTER) {
 		// use x and y as the max w and h radius's
 		if (w > x * 2)
 			w = x * 2;
@@ -80,8 +75,10 @@ void Smetch::rect(float x, float y, float w, float h) {
 		Size2 rect_size = Size2(w, h);
 		Size2 parent_size = get_size(); // TODO : maybe can cache this, but only will work if always the same parent
 
-    if (rect_size.x > parent_size.x) rect_size.x = parent_size.x;
-    if (rect_size.y > parent_size.y) rect_size.y = parent_size.y;
+		if (rect_size.x > parent_size.x)
+			rect_size.x = parent_size.x;
+		if (rect_size.y > parent_size.y)
+			rect_size.y = parent_size.y;
 
 		Point2 pos = Point2(0, 0);
 		if (rect_size.x < parent_size.x) {
@@ -128,35 +125,23 @@ void Smetch::create_canvas(int x, int y) {
 
 	Size2 this_size = Size2(x, y);
 	this->set_size(this_size);
+	this->set_expand(true);
 
+	Point2 pos = Point2(0, 0);
 	Size2 parent_size = get_parent_area_size();
 
-	// try and centre this in the parent
-	// if parent is not big enough then this wont scale smaller
-	// TODO : scale to size
-	Point2 pos = Point2(0, 0);
 	if (this_size.x < parent_size.x) {
 		pos.x = (parent_size.x - this_size.x) * 0.5;
 	}
 	if (this_size.y < parent_size.y) {
 		pos.y = (parent_size.y - this_size.y) * 0.5;
 	}
-	this->set_position(pos);
-
-	viewport = memnew(SubViewport);
-	viewport->set_size_2d_override_stretch(true);
-	viewport->set_size(this_size);
-  viewport->set_use_occlusion_culling(true);
-
-	background_rect = memnew(TextureRect);
-	background_rect->set_expand(true);
-	background_rect->set_size(this_size);
+	set_position(pos);
 
 	CanvasTexture *background_canvas_texture = memnew(CanvasTexture);
-	background_rect->set_texture(background_canvas_texture);
+	set_texture(background_canvas_texture);
 
-	viewport->add_child(background_rect);
-	this->add_child(viewport);
+	background_rect = Rect2(Point2(0, 0), get_size());
 }
 
 void Smetch::no_stroke() {
@@ -178,6 +163,16 @@ void Smetch::rect_mode(int mode) {
 			mode == CENTER) {
 		rct_mode = mode;
 	}
+}
+
+void Smetch::save_canvas(String file_name) {
+	Ref<Image> image = get_viewport()->get_texture()->get_image();
+	String dir = OS::get_singleton()->get_user_data_dir();
+	image->save_png(dir + "/" + file_name + ".png");
+}
+
+Vector2 Smetch::get_mouse_position() {
+	return get_local_mouse_position();
 }
 
 Smetch::Smetch() {}

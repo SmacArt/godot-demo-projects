@@ -3,27 +3,27 @@
 #ifndef SMETCH_H
 #define SMETCH_H
 
-#include "scene/gui/texture_rect.h"
-#include "scene/gui/subviewport_container.h"
-#include "scene/main/viewport.h"
 #include "core/math/color.h"
+#include "core/os/os.h"
+#include "scene/gui/texture_rect.h"
+#include "scene/main/viewport.h"
 
-class Smetch : public SubViewportContainer {
-	GDCLASS(Smetch, SubViewportContainer);
+class Smetch : public TextureRect {
+	GDCLASS(Smetch, TextureRect);
 
 protected:
 	static void _bind_methods();
 
 public:
 	enum Constants {
-    RGB,
+		RGB,
 		HSB,
 		HSL,
-    CORNER,
-    CORNERS,
-    RADIUS,
-    CENTER
-  };
+		CORNER,
+		CORNERS,
+		RADIUS,
+		CENTER
+	};
 
 	void background(float value1, float value2, float value3);
 	void color_mode(int mode, float value1, float value2, float value3, float value4);
@@ -31,22 +31,20 @@ public:
 	void fill(float value1, float value2, float value3);
 	void rect(float x, float y, float w, float h);
 	void no_cursor();
-  void no_stroke();
-  void rect_mode(int mode);
+	void no_stroke();
+	void rect_mode(int mode);
+	void save_canvas(String file_name);
 
 	Vector2 get_mouse_position();
 
 	Smetch();
 
 private:
+	void apply_color(float value1, float value2, float value3, float value4);
 
-  void apply_color(float value1, float value2, float value3, float value4);
-
-	SubViewport *viewport;
-  TextureRect *background_rect;
-
-  Color color;
-  Color fill_color;
+	Color color;
+	Color fill_color;
+	Rect2 background_rect;
 
 	int clr_mode = RGB;
 	int color_maxes[3][4] = {
@@ -54,10 +52,10 @@ private:
 		{ 360, 100, 100, 1 }, // HSB
 		{ 360, 100, 100, 1 } // HSL
 	};
-  int maxes[4];
+	int maxes[4];
 	bool renderer_no_cursor;
-  bool renderer_no_stroke;
-  int rct_mode = CORNER;
+	bool renderer_no_stroke;
+	int rct_mode = CORNER;
 };
 
 #endif // SMETCH_H
