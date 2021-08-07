@@ -176,7 +176,7 @@ void Smetch::rect_mode(int mode) {
 void Smetch::save_canvas(String file_name) {
 	Ref<Image> image = get_viewport()->get_texture()->get_image();
 	String dir = OS::get_singleton()->get_user_data_dir();
-	image->save_png(dir + "/" + file_name + ".png");
+	image->save_png(dir + "/" + file_name + "_" + itos(OS::get_singleton()->get_unix_time()) + ".png");
 }
 
 Vector2 Smetch::get_mouse_position() {
