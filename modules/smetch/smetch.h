@@ -32,12 +32,16 @@ public:
 	void rect(float x, float y, float w, float h);
 	void no_cursor();
 	void no_stroke();
+  void continuous_drawing(bool is_continuous);
 	void rect_mode(int mode);
 	void save_canvas(String file_name);
 
 	Vector2 get_mouse_position();
 
+  void _process(float delta);
+
 	Smetch();
+  ~Smetch();
 
 private:
 	void apply_color(float value1, float value2, float value3, float value4);
@@ -45,6 +49,7 @@ private:
 	Color color;
 	Color fill_color;
 	Rect2 background_rect;
+	CanvasTexture *canvas_texture;
 
 	int clr_mode = RGB;
 	int color_maxes[3][4] = {
@@ -55,6 +60,7 @@ private:
 	int maxes[4];
 	bool renderer_no_cursor;
 	bool renderer_no_stroke;
+  bool is_continuous_drawing = true;
 	int rct_mode = CORNER;
 };
 

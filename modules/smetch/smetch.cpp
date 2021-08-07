@@ -7,6 +7,7 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("color_mode", "mode", "value1", "value2", "value3", "value4"), &Smetch::color_mode, DEFVAL(RGB), DEFVAL(1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("background"), &Smetch::background);
 	ClassDB::bind_method(D_METHOD("create_canvas"), &Smetch::create_canvas);
+	ClassDB::bind_method(D_METHOD("continuous_drawing"), &Smetch::continuous_drawing);
 	ClassDB::bind_method(D_METHOD("fill"), &Smetch::fill);
 	ClassDB::bind_method(D_METHOD("rect"), &Smetch::rect);
 	ClassDB::bind_method(D_METHOD("no_cursor"), &Smetch::no_cursor);
@@ -14,6 +15,7 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("rect_mode"), &Smetch::rect_mode);
 	ClassDB::bind_method(D_METHOD("save_canvas"), &Smetch::save_canvas);
 	ClassDB::bind_method(D_METHOD("get_mouse_position"), &Smetch::get_mouse_position);
+	ClassDB::bind_method(D_METHOD("_process"), &Smetch::_process);
 
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("RGB"), RGB);
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("HSB"), HSB);
@@ -127,7 +129,8 @@ void Smetch::create_canvas(int x, int y) {
 	this->set_size(this_size);
 	this->set_expand(true);
 
-	Point2 pos = Point2(0, 0);
+  /* TODO : steve -- add a Self Center attribute 
+  Point2 pos = Point2(0, 0);
 	Size2 parent_size = get_parent_area_size();
 
 	if (this_size.x < parent_size.x) {
@@ -137,9 +140,10 @@ void Smetch::create_canvas(int x, int y) {
 		pos.y = (parent_size.y - this_size.y) * 0.5;
 	}
 	set_position(pos);
+  */
 
-	CanvasTexture *background_canvas_texture = memnew(CanvasTexture);
-	set_texture(background_canvas_texture);
+	canvas_texture = memnew(CanvasTexture);
+	set_texture(canvas_texture);
 
 	background_rect = Rect2(Point2(0, 0), get_size());
 }
@@ -154,6 +158,10 @@ void Smetch::no_cursor() {
 	// TODO : Add no_cursor functionality
 	renderer_no_cursor = false;
 	print_line("todo : no_cursor does nothing");
+}
+
+void Smetch::continuous_drawing(bool is_continuous) {
+	is_continuous_drawing = is_continuous;
 }
 
 void Smetch::rect_mode(int mode) {
@@ -175,6 +183,12 @@ Vector2 Smetch::get_mouse_position() {
 	return get_local_mouse_position();
 }
 
-Smetch::Smetch() {}
+void Smetch::_process(float delta) {
+	if (is_continuous_drawing) {
+		update();
+	}
+}
 
-// todo : destructor
+Smetch::Smetch() {}
+Smetch::~Smetch() {
+}
