@@ -40,7 +40,7 @@ public:
 	void no_stroke();
   void continuous_drawing(bool is_continuous);
 	void rect_mode(int mode);
-	void save_canvas(String file_name);
+	String save_canvas(String file_name);
 
 	Vector2 get_mouse_position();
   void update_cursor();
