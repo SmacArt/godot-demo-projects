@@ -4,6 +4,11 @@
 #include <iostream>
 
 void Smetch::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_properties", "SmetchProperties"), &Smetch::set_properties);
+	ClassDB::bind_method(D_METHOD("get_properties"), &Smetch::get_properties);
+
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "SmetchProperties", PROPERTY_HINT_RESOURCE_TYPE, "SmetchProperties"), "set_properties", "get_properties");
+
 	ClassDB::bind_method(D_METHOD("color_mode", "mode", "value1", "value2", "value3", "value4"), &Smetch::color_mode, DEFVAL(RGB), DEFVAL(1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("background"), &Smetch::background);
 	ClassDB::bind_method(D_METHOD("create_canvas"), &Smetch::create_canvas);
@@ -26,6 +31,15 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("CORNERS"), CORNERS);
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("RADIUS"), RADIUS);
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("CENTER"), CENTER);
+}
+
+
+void Smetch::set_properties(const Ref<SmetchProperties> &p_properties) {
+  properties = p_properties;
+}
+
+Ref<SmetchProperties> Smetch::get_properties() const {
+  return properties;
 }
 
 void Smetch::apply_color(float value1, float value2, float value3, float value4) {
@@ -119,8 +133,6 @@ void Smetch::color_mode(int mode, float value1, float value2, float value3, floa
 			maxes[2] = value3; // Blue
 			maxes[3] = value1; // Alpha
 		}
-
-		print_line("Color Mode: " + itos(clr_mode) + " - " + itos(maxes[0]) + "," + itos(maxes[1]) + "," + itos(maxes[2]) + "," + itos(maxes[3]));
 	}
 }
 
@@ -136,7 +148,7 @@ void Smetch::create_canvas(int x, int y) {
 
 	background_rect = Rect2(Point2(0, 0), get_size());
 
-  parent_mouse_mode = Input::get_singleton()->get_mouse_mode();
+	parent_mouse_mode = Input::get_singleton()->get_mouse_mode();
 }
 
 void Smetch::no_stroke() {
@@ -147,7 +159,7 @@ void Smetch::no_stroke() {
 
 void Smetch::no_cursor() {
 	cursor_mode = CURSOR_HIDDEN;
-  update_cursor();
+	update_cursor();
 }
 
 void Smetch::update_cursor() {
@@ -182,16 +194,16 @@ Vector2 Smetch::get_mouse_position() {
 }
 
 void Smetch::mouse_entered() {
-  update_cursor();
+	update_cursor();
 }
 
 void Smetch::mouse_exited() {
-  Input::get_singleton()->set_mouse_mode(parent_mouse_mode);
+	Input::get_singleton()->set_mouse_mode(parent_mouse_mode);
 }
 
 void Smetch::_ready() {
-  connect("mouse_entered", callable_mp(this, &Smetch::mouse_entered));
-  connect("mouse_exited", callable_mp(this, &Smetch::mouse_exited));
+	connect("mouse_entered", callable_mp(this, &Smetch::mouse_entered));
+	connect("mouse_exited", callable_mp(this, &Smetch::mouse_exited));
 }
 
 void Smetch::_process(float delta) {

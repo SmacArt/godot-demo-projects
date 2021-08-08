@@ -1,0 +1,1 @@
+core/object/class_db.cpp:		ERR_FAIL_COND_MSG(!mb_set, "Invalid setter '" + p_class + "::" + p_setter + "' for property '" + p_pinfo.name + "'.");

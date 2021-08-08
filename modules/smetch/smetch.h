@@ -7,6 +7,7 @@
 #include "core/os/os.h"
 #include "scene/gui/texture_rect.h"
 #include "scene/main/viewport.h"
+#include "smetch_properties.h"
 
 class Smetch : public TextureRect {
 	GDCLASS(Smetch, TextureRect);
@@ -26,6 +27,9 @@ public:
     CURSOR_HIDDEN,
     CURSOR_ARROW
 };
+
+  void set_properties(const Ref<SmetchProperties> &properties);
+  Ref<SmetchProperties> get_properties() const;
 
 	void background(float value1, float value2, float value3);
 	void color_mode(int mode, float value1, float value2, float value3, float value4);
@@ -51,6 +55,8 @@ private:
 	void apply_color(float value1, float value2, float value3, float value4);
   void mouse_entered();
   void mouse_exited();
+
+  Ref<SmetchProperties> properties;
 
 	Color color;
 	Color fill_color;
