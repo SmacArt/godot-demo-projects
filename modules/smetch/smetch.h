@@ -22,8 +22,10 @@ public:
 		CORNER,
 		CORNERS,
 		RADIUS,
-		CENTER
-	};
+		CENTER,
+    CURSOR_HIDDEN,
+    CURSOR_ARROW
+};
 
 	void background(float value1, float value2, float value3);
 	void color_mode(int mode, float value1, float value2, float value3, float value4);
@@ -37,7 +39,9 @@ public:
 	void save_canvas(String file_name);
 
 	Vector2 get_mouse_position();
+  void update_cursor();
 
+  void _ready();
   void _process(float delta);
 
 	Smetch();
@@ -45,6 +49,8 @@ public:
 
 private:
 	void apply_color(float value1, float value2, float value3, float value4);
+  void mouse_entered();
+  void mouse_exited();
 
 	Color color;
 	Color fill_color;
@@ -58,10 +64,11 @@ private:
 		{ 360, 100, 100, 1 } // HSL
 	};
 	int maxes[4];
-	bool renderer_no_cursor;
-	bool renderer_no_stroke;
+  bool renderer_no_stroke;
   bool is_continuous_drawing = true;
 	int rct_mode = CORNER;
+  int cursor_mode = CURSOR_ARROW;
+  Input::MouseMode parent_mouse_mode;
 };
 
 #endif // SMETCH_H

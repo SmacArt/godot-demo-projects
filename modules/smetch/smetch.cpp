@@ -15,6 +15,8 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("rect_mode"), &Smetch::rect_mode);
 	ClassDB::bind_method(D_METHOD("save_canvas"), &Smetch::save_canvas);
 	ClassDB::bind_method(D_METHOD("get_mouse_position"), &Smetch::get_mouse_position);
+	ClassDB::bind_method(D_METHOD("update_cursor"), &Smetch::update_cursor);
+	ClassDB::bind_method(D_METHOD("_ready"), &Smetch::_ready);
 	ClassDB::bind_method(D_METHOD("_process"), &Smetch::_process);
 
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("RGB"), RGB);
@@ -129,23 +131,12 @@ void Smetch::create_canvas(int x, int y) {
 	this->set_size(this_size);
 	this->set_expand(true);
 
-  /* TODO : steve -- add a Self Center attribute 
-  Point2 pos = Point2(0, 0);
-	Size2 parent_size = get_parent_area_size();
-
-	if (this_size.x < parent_size.x) {
-		pos.x = (parent_size.x - this_size.x) * 0.5;
-	}
-	if (this_size.y < parent_size.y) {
-		pos.y = (parent_size.y - this_size.y) * 0.5;
-	}
-	set_position(pos);
-  */
-
 	canvas_texture = memnew(CanvasTexture);
 	set_texture(canvas_texture);
 
 	background_rect = Rect2(Point2(0, 0), get_size());
+
+  parent_mouse_mode = Input::get_singleton()->get_mouse_mode();
 }
 
 void Smetch::no_stroke() {
@@ -155,9 +146,16 @@ void Smetch::no_stroke() {
 }
 
 void Smetch::no_cursor() {
-	// TODO : Add no_cursor functionality
-	renderer_no_cursor = false;
-	print_line("todo : no_cursor does nothing");
+	cursor_mode = CURSOR_HIDDEN;
+  update_cursor();
+}
+
+void Smetch::update_cursor() {
+	if (cursor_mode == CURSOR_HIDDEN) {
+		Input::get_singleton()->set_mouse_mode(Input::MOUSE_MODE_HIDDEN);
+	} else {
+		Input::get_singleton()->set_mouse_mode(Input::MOUSE_MODE_VISIBLE);
+	}
 }
 
 void Smetch::continuous_drawing(bool is_continuous) {
@@ -183,6 +181,19 @@ Vector2 Smetch::get_mouse_position() {
 	return get_local_mouse_position();
 }
 
+void Smetch::mouse_entered() {
+  update_cursor();
+}
+
+void Smetch::mouse_exited() {
+  Input::get_singleton()->set_mouse_mode(parent_mouse_mode);
+}
+
+void Smetch::_ready() {
+  connect("mouse_entered", callable_mp(this, &Smetch::mouse_entered));
+  connect("mouse_exited", callable_mp(this, &Smetch::mouse_exited));
+}
+
 void Smetch::_process(float delta) {
 	if (is_continuous_drawing) {
 		update();
@@ -190,5 +201,4 @@ void Smetch::_process(float delta) {
 }
 
 Smetch::Smetch() {}
-Smetch::~Smetch() {
-}
+Smetch::~Smetch() {}
