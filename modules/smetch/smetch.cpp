@@ -11,13 +11,13 @@ void Smetch::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "SmetchProperties", PROPERTY_HINT_RESOURCE_TYPE, "SmetchProperties"), "set_properties", "get_properties");
 
 	ClassDB::bind_method(D_METHOD("color_mode", "mode", "value1", "value2", "value3", "value4"), &Smetch::color_mode, DEFVAL(RGB), DEFVAL(1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
+	ClassDB::bind_method(D_METHOD("prime_color", "value1", "value2", "value3", "value4"), &Smetch::prime_color, DEFVAL(Color()), DEFVAL(1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("background"), &Smetch::background);
 	ClassDB::bind_method(D_METHOD("create_canvas"), &Smetch::create_canvas);
 	ClassDB::bind_method(D_METHOD("continuous_drawing"), &Smetch::continuous_drawing);
 	ClassDB::bind_method(D_METHOD("fill"), &Smetch::fill);
 	ClassDB::bind_method(D_METHOD("fill_with_color"), &Smetch::fill_with_color);
 	ClassDB::bind_method(D_METHOD("rect"), &Smetch::rect);
-	ClassDB::bind_method(D_METHOD("random"), &Smetch::random);
 	ClassDB::bind_method(D_METHOD("no_cursor"), &Smetch::no_cursor);
 	ClassDB::bind_method(D_METHOD("no_stroke"), &Smetch::no_stroke);
 	ClassDB::bind_method(D_METHOD("rect_mode"), &Smetch::rect_mode);
@@ -33,6 +33,8 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("fconstrain"), &Smetch::fconstrain);
 	ClassDB::bind_method(D_METHOD("map"), &Smetch::map);
 	ClassDB::bind_method(D_METHOD("fmap"), &Smetch::fmap);
+	ClassDB::bind_method(D_METHOD("random"), &Smetch::random);
+	ClassDB::bind_method(D_METHOD("frandom"), &Smetch::frandom);
 
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("RGB"), RGB);
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("HSB"), HSB);
@@ -51,33 +53,36 @@ Ref<SmetchProperties> Smetch::get_properties() const {
 	return properties;
 }
 
-void Smetch::apply_color(float value1, float value2, float value3, float value4) {
+void Smetch::apply_color(float value1, float value2, float value3, float value4, Color to_color) {
 	if (value4 == -1) {
 		value4 = maxes[3];
 	}
 	if (clr_mode == HSB) {
-		color.set_hsv(value1 / maxes[0], value2 / maxes[1], value3 / maxes[2], value4 / maxes[3]);
+		to_color.set_hsv(value1 / maxes[0], value2 / maxes[1], value3 / maxes[2], value4 / maxes[3]);
 	} else {
 		// RGB
-		color.r = value1 / maxes[0];
-		color.g = value2 / maxes[1];
-		color.b = value3 / maxes[2];
-		color.a = value4 / maxes[3];
+		to_color.r = value1 / maxes[0];
+		to_color.g = value2 / maxes[1];
+		to_color.b = value3 / maxes[2];
+		to_color.a = value4 / maxes[3];
 	}
+  fill_color = to_color;
+}
+
+void Smetch::prime_color(Color color, float value1, float value2, float value3, float value4) {
+  apply_color(value1, value2, value3, value4, color);
 }
 
 void Smetch::background(float value1, float value2, float value3) {
-	apply_color(value1, value2, value3, -1);
-	draw_rect(background_rect, color);
+	apply_color(value1, value2, value3, -1, background_color);
+	draw_rect(background_rect, background_color);
 }
 
 void Smetch::fill(float value1, float value2, float value3) {
-	apply_color(value1, value2, value3, -1);
-	fill_color = color;
+	apply_color(value1, value2, value3, -1, fill_color);
 }
 
-void Smetch::fill_with_color(Color p_color) {
-  color = p_color;
+void Smetch::fill_with_color(Color color) {
   fill_color = color;
 }
 
@@ -210,7 +215,7 @@ Vector2 Smetch::get_mouse_position() {
 }
 
 Color Smetch::get_current_color() {
-	return color;
+	return fill_color;
 }
 
 void Smetch::mouse_entered() {
@@ -232,19 +237,28 @@ void Smetch::_process(float delta) {
 	}
 }
 
-int Smetch::random(int from, int to) {
-	return random_number_generator->randi_range(from, to);
-}
 
 Smetch::Smetch() {
+  print_line("constructor");
 	random_number_generator = memnew(RandomNumberGenerator);
+  random_number_generator->set_seed(OS::get_singleton()->get_unix_time());
+  random_number_generator->randomize();
 	if (properties != nullptr) {
+    print_line("seeding: " + itos(properties->get_random_seed()) );
 		random_number_generator->set_seed(properties->get_random_seed());
 	}
 }
 Smetch::~Smetch() {}
 
 ///////////////////////////////////////////////////////////////////
+double Smetch::random(double from, double to) {
+	return random_number_generator->randi_range(from, to);
+}
+
+float Smetch::frandom(float from, float to) {
+	return random_number_generator->randf_range(from, to);
+}
+
 double Smetch::constrain(double n, double low, double high) {
   return max(min(n,high),low);
 }
@@ -270,6 +284,7 @@ Color Smetch::lerp_color(Color c1, Color c2, float amt) {
 	float l0, l1, l2, l3;
 	float from_array[4];
 	float to_array[4];
+  Color color;
 
 	if (clr_mode == RGB) {
 		from_array[0] = c1.r;

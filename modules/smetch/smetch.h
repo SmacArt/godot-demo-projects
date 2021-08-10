@@ -36,6 +36,7 @@ public:
 	void color_mode(int mode, float value1, float value2, float value3, float value4);
 	void create_canvas(int x, int y);
 	void fill(float value1, float value2, float value3);
+	void prime_color(Color color, float value1, float value2, float value3, float value4);
 	void fill_with_color(Color color);
 	void rect(float x, float y, float w, float h);
 	void no_cursor();
@@ -43,7 +44,6 @@ public:
   void continuous_drawing(bool is_continuous);
 	void rect_mode(int mode);
 	String save_canvas(String file_name);
-  int random(int from, int to);
 
 	Vector2 get_mouse_position();
   void update_cursor();
@@ -55,6 +55,8 @@ public:
   float fconstrain(float n, float low, float high);
   double min(double n1, double n2);
   double max(double n1, double n2);
+  double random(double from, double to);
+  float frandom(float from, float to);
 
   void _ready();
   void _process(float delta);
@@ -63,14 +65,14 @@ public:
   ~Smetch();
 
 private:
-	void apply_color(float value1, float value2, float value3, float value4);
+	void apply_color(float value1, float value2, float value3, float value4, Color to_color);
   void mouse_entered();
   void mouse_exited();
 
   Ref<SmetchProperties> properties;
 
-	Color color;
 	Color fill_color;
+	Color background_color;
 	Rect2 background_rect;
 	CanvasTexture *canvas_texture;
   RandomNumberGenerator *random_number_generator;
