@@ -8,6 +8,7 @@
 #include "scene/gui/texture_rect.h"
 #include "scene/main/viewport.h"
 #include "smetch_properties.h"
+#include "core/math/random_number_generator.h"
 
 class Smetch : public TextureRect {
 	GDCLASS(Smetch, TextureRect);
@@ -35,15 +36,25 @@ public:
 	void color_mode(int mode, float value1, float value2, float value3, float value4);
 	void create_canvas(int x, int y);
 	void fill(float value1, float value2, float value3);
+	void fill_with_color(Color color);
 	void rect(float x, float y, float w, float h);
 	void no_cursor();
 	void no_stroke();
   void continuous_drawing(bool is_continuous);
 	void rect_mode(int mode);
 	String save_canvas(String file_name);
+  int random(int from, int to);
 
 	Vector2 get_mouse_position();
   void update_cursor();
+  Color get_current_color();
+  Color lerp_color(Color c1, Color c2, float amt);
+  double map(double n, double start1, double stop1, double start2, double stop2);
+  float fmap(float n, float start1, float stop1, float start2, float stop2);
+  double constrain(double n, double low, double high);
+  float fconstrain(float n, float low, float high);
+  double min(double n1, double n2);
+  double max(double n1, double n2);
 
   void _ready();
   void _process(float delta);
@@ -62,6 +73,7 @@ private:
 	Color fill_color;
 	Rect2 background_rect;
 	CanvasTexture *canvas_texture;
+  RandomNumberGenerator *random_number_generator;
 
 	int clr_mode = RGB;
 	int color_maxes[3][4] = {

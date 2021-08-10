@@ -12,6 +12,7 @@ private:
   String identifier;
   String title;
   String description;
+  int random_seed;
 
 protected:
 	static void _bind_methods();
@@ -23,6 +24,8 @@ public:
   void set_identifier(String title);
   String get_description();
   void set_description(String title);
+  int get_random_seed();
+  void set_random_seed(int seed);
 
 private:
 };
