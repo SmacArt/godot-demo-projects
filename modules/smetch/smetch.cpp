@@ -10,7 +10,7 @@ void Smetch::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "SmetchProperties", PROPERTY_HINT_RESOURCE_TYPE, "SmetchProperties"), "set_properties", "get_properties");
 
-	ClassDB::bind_method(D_METHOD("color_mode", "mode", "value1", "value2", "value3", "value4"), &Smetch::color_mode, DEFVAL(RGB), DEFVAL(1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
+	ClassDB::bind_method(D_METHOD("color_mode", "mode", "value1", "value2", "value3", "value4"), &Smetch::color_mode, DEFVAL(RGB), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("prime_color", "value1", "value2", "value3", "value4"), &Smetch::prime_color, DEFVAL(Color()), DEFVAL(1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("background"), &Smetch::background);
 	ClassDB::bind_method(D_METHOD("create_canvas"), &Smetch::create_canvas);
@@ -53,7 +53,7 @@ Ref<SmetchProperties> Smetch::get_properties() const {
 	return properties;
 }
 
-void Smetch::apply_color(float value1, float value2, float value3, float value4, Color to_color) {
+Color Smetch::apply_color(float value1, float value2, float value3, float value4, Color to_color) {
 	if (value4 == -1) {
 		value4 = maxes[3];
 	}
@@ -66,20 +66,20 @@ void Smetch::apply_color(float value1, float value2, float value3, float value4,
 		to_color.b = value3 / maxes[2];
 		to_color.a = value4 / maxes[3];
 	}
-  fill_color = to_color;
+  return to_color;
 }
 
-void Smetch::prime_color(Color color, float value1, float value2, float value3, float value4) {
-  apply_color(value1, value2, value3, value4, color);
+Color Smetch::prime_color(Color color, float value1, float value2, float value3, float value4) {
+  return apply_color(value1, value2, value3, value4, color);
 }
 
 void Smetch::background(float value1, float value2, float value3) {
-	apply_color(value1, value2, value3, -1, background_color);
+	background_color = apply_color(value1, value2, value3, -1, background_color);
 	draw_rect(background_rect, background_color);
 }
 
 void Smetch::fill(float value1, float value2, float value3) {
-	apply_color(value1, value2, value3, -1, fill_color);
+	fill_color = apply_color(value1, value2, value3, -1, fill_color);
 }
 
 void Smetch::fill_with_color(Color color) {
@@ -137,7 +137,9 @@ void Smetch::color_mode(int mode, float value1, float value2, float value3, floa
 			maxes[i] = color_maxes[clr_mode][i];
 		}
 
-		if (value2 == -1) {
+    if (value1 == -1) {
+      // do nothing .. will uses the color_maxes defaults
+    } else if (value2 == -1) {
 			maxes[0] = value1; // Red
 			maxes[1] = value1; // Green
 			maxes[2] = value1; // Blue

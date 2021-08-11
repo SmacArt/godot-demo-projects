@@ -36,7 +36,7 @@ public:
 	void color_mode(int mode, float value1, float value2, float value3, float value4);
 	void create_canvas(int x, int y);
 	void fill(float value1, float value2, float value3);
-	void prime_color(Color color, float value1, float value2, float value3, float value4);
+	Color prime_color(Color color, float value1, float value2, float value3, float value4);
 	void fill_with_color(Color color);
 	void rect(float x, float y, float w, float h);
 	void no_cursor();
@@ -65,7 +65,7 @@ public:
   ~Smetch();
 
 private:
-	void apply_color(float value1, float value2, float value3, float value4, Color to_color);
+	Color apply_color(float value1, float value2, float value3, float value4, Color to_color);
   void mouse_entered();
   void mouse_exited();
 
