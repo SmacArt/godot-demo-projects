@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  capsule_shape_2d.h                                                   */
+/*  error_list.cpp                                                       */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,37 +28,58 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef CAPSULE_SHAPE_2D_H
-#define CAPSULE_SHAPE_2D_H
+#include "error_list.h"
 
-#include "scene/resources/shape_2d.h"
-
-class CapsuleShape2D : public Shape2D {
-	GDCLASS(CapsuleShape2D, Shape2D);
-
-	real_t height = 30.0;
-	real_t radius = 10.0;
-
-	void _update_shape();
-	Vector<Vector2> _get_points() const;
-
-protected:
-	static void _bind_methods();
-
-public:
-	virtual bool _edit_is_selected_on_click(const Point2 &p_point, double p_tolerance) const override;
-
-	void set_height(real_t p_height);
-	real_t get_height() const;
-
-	void set_radius(real_t p_radius);
-	real_t get_radius() const;
-
-	virtual void draw(const RID &p_to_rid, const Color &p_color) override;
-	virtual Rect2 get_rect() const override;
-	virtual real_t get_enclosing_radius() const override;
-
-	CapsuleShape2D();
+const char *error_names[] = {
+	"No error",
+	"Generic error",
+	"Requested operation is unsupported/unavailable",
+	"The object hasn't been set up properly",
+	"Missing credentials for requested resource",
+	"Parameter out of range",
+	"Out of memory",
+	"File not found",
+	"Bad drive",
+	"Bad path",
+	"Permission denied",
+	"Already in use",
+	"Can't open file",
+	"Can't write file",
+	"Can't read file",
+	"File unrecognized",
+	"File corrupt",
+	"Missing dependencies for file",
+	"Unexpected eof",
+	"Can't open resource/socket/file", // File too? What's the difference to ERR_FILE_CANT_OPEN
+	"Can't create", // What can't be created,
+	"Query failed", // What query,
+	"Already in use",
+	"Resource is locked",
+	"Timeout",
+	"Can't connect",
+	"Can't resolve hostname", // I guessed it's the hostname here.
+	"Connection error",
+	"Can't acquire resource",
+	"Can't fork",
+	"Invalid data",
+	"Invalid parameter",
+	"Item already exists",
+	"Item does not exist",
+	"Can't read from database", // Comments say, it's full? Is that correct?
+	"Can't write to database", // Is the database always full when this is raised?
+	"Compilation failed",
+	"Method not found",
+	"Link failed",
+	"Script failed",
+	"Cyclic link detected",
+	"Invalid declaration",
+	"Duplicate symbol",
+	"Parse error",
+	"Resource is busy",
+	"Skip error", // ???? What's this? String taken from the docs
+	"Help error", // More specific?
+	"Bug",
+	"Printer on fire",
 };
 
-#endif // CAPSULE_SHAPE_2D_H
+static_assert(sizeof(error_names) / sizeof(*error_names) == ERR_MAX);
