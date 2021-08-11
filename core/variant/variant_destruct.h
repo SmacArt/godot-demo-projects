@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  ray_shape_3d.cpp                                                     */
+/*  variant_destruct.h                                                   */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,64 +28,49 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "ray_shape_3d.h"
+#ifndef VARIANT_DESTRUCT_H
+#define VARIANT_DESTRUCT_H
 
-#include "servers/physics_server_3d.h"
+#include "core/variant/variant.h"
 
-Vector<Vector3> RayShape3D::get_debug_mesh_lines() const {
-	Vector<Vector3> points;
-	points.push_back(Vector3());
-	points.push_back(Vector3(0, 0, get_length()));
+#include "core/object/class_db.h"
 
-	return points;
-}
+template <class T>
+struct VariantDestruct {};
 
-real_t RayShape3D::get_enclosing_radius() const {
-	return length;
-}
+#define MAKE_PTRDESTRUCT(m_type)                               \
+	template <>                                                \
+	struct VariantDestruct<m_type> {                           \
+		_FORCE_INLINE_ static void ptr_destruct(void *p_ptr) { \
+			reinterpret_cast<m_type *>(p_ptr)->~m_type();      \
+		}                                                      \
+		_FORCE_INLINE_ static Variant::Type get_base_type() {  \
+			return GetTypeInfo<m_type>::VARIANT_TYPE;          \
+		}                                                      \
+	}
 
-void RayShape3D::_update_shape() {
-	Dictionary d;
-	d["length"] = length;
-	d["slips_on_slope"] = slips_on_slope;
-	PhysicsServer3D::get_singleton()->shape_set_data(get_shape(), d);
-	Shape3D::_update_shape();
-}
+MAKE_PTRDESTRUCT(String);
+MAKE_PTRDESTRUCT(Transform2D);
+MAKE_PTRDESTRUCT(AABB);
+MAKE_PTRDESTRUCT(Basis);
+MAKE_PTRDESTRUCT(Transform3D);
+MAKE_PTRDESTRUCT(StringName);
+MAKE_PTRDESTRUCT(NodePath);
+MAKE_PTRDESTRUCT(RID);
+MAKE_PTRDESTRUCT(Callable);
+MAKE_PTRDESTRUCT(Signal);
+MAKE_PTRDESTRUCT(Dictionary);
+MAKE_PTRDESTRUCT(Array);
+MAKE_PTRDESTRUCT(PackedByteArray);
+MAKE_PTRDESTRUCT(PackedInt32Array);
+MAKE_PTRDESTRUCT(PackedInt64Array);
+MAKE_PTRDESTRUCT(PackedFloat32Array);
+MAKE_PTRDESTRUCT(PackedFloat64Array);
+MAKE_PTRDESTRUCT(PackedStringArray);
+MAKE_PTRDESTRUCT(PackedVector2Array);
+MAKE_PTRDESTRUCT(PackedVector3Array);
+MAKE_PTRDESTRUCT(PackedColorArray);
 
-void RayShape3D::set_length(float p_length) {
-	length = p_length;
-	_update_shape();
-	notify_change_to_owners();
-}
+#undef MAKE_PTRDESTRUCT
 
-float RayShape3D::get_length() const {
-	return length;
-}
-
-void RayShape3D::set_slips_on_slope(bool p_active) {
-	slips_on_slope = p_active;
-	_update_shape();
-	notify_change_to_owners();
-}
-
-bool RayShape3D::get_slips_on_slope() const {
-	return slips_on_slope;
-}
-
-void RayShape3D::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_length", "length"), &RayShape3D::set_length);
-	ClassDB::bind_method(D_METHOD("get_length"), &RayShape3D::get_length);
-
-	ClassDB::bind_method(D_METHOD("set_slips_on_slope", "active"), &RayShape3D::set_slips_on_slope);
-	ClassDB::bind_method(D_METHOD("get_slips_on_slope"), &RayShape3D::get_slips_on_slope);
-
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "length", PROPERTY_HINT_RANGE, "0,4096,0.001"), "set_length", "get_length");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "slips_on_slope"), "set_slips_on_slope", "get_slips_on_slope");
-}
-
-RayShape3D::RayShape3D() :
-		Shape3D(PhysicsServer3D::get_singleton()->shape_create(PhysicsServer3D::SHAPE_RAY)) {
-	/* Code copied from setters to prevent the use of uninitialized variables */
-	_update_shape();
-	notify_change_to_owners();
-}
+#endif // VARIANT_DESTRUCT_H

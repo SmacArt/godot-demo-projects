@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  ray_shape_3d.h                                                       */
+/*  variant_destruct.cpp                                                 */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,29 +28,51 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef RAY_SHAPE_H
-#define RAY_SHAPE_H
-#include "scene/resources/shape_3d.h"
+#include "variant_destruct.h"
 
-class RayShape3D : public Shape3D {
-	GDCLASS(RayShape3D, Shape3D);
-	float length = 1.0;
-	bool slips_on_slope = false;
+#include "core/templates/local_vector.h"
 
-protected:
-	static void _bind_methods();
-	virtual void _update_shape() override;
+static Variant::PTRDestructor destruct_pointers[Variant::VARIANT_MAX] = { nullptr };
 
-public:
-	void set_length(float p_length);
-	float get_length() const;
+template <class T>
+static void add_destructor() {
+	destruct_pointers[T::get_base_type()] = T::ptr_destruct;
+}
 
-	void set_slips_on_slope(bool p_active);
-	bool get_slips_on_slope() const;
+void Variant::_register_variant_destructors() {
+	add_destructor<VariantDestruct<String>>();
+	add_destructor<VariantDestruct<Transform2D>>();
+	add_destructor<VariantDestruct<::AABB>>();
+	add_destructor<VariantDestruct<Basis>>();
+	add_destructor<VariantDestruct<Transform3D>>();
+	add_destructor<VariantDestruct<StringName>>();
+	add_destructor<VariantDestruct<NodePath>>();
+	add_destructor<VariantDestruct<::RID>>();
+	add_destructor<VariantDestruct<Callable>>();
+	add_destructor<VariantDestruct<Signal>>();
+	add_destructor<VariantDestruct<Dictionary>>();
+	add_destructor<VariantDestruct<Array>>();
+	add_destructor<VariantDestruct<PackedByteArray>>();
+	add_destructor<VariantDestruct<PackedInt32Array>>();
+	add_destructor<VariantDestruct<PackedInt64Array>>();
+	add_destructor<VariantDestruct<PackedFloat32Array>>();
+	add_destructor<VariantDestruct<PackedFloat64Array>>();
+	add_destructor<VariantDestruct<PackedStringArray>>();
+	add_destructor<VariantDestruct<PackedVector2Array>>();
+	add_destructor<VariantDestruct<PackedVector3Array>>();
+	add_destructor<VariantDestruct<PackedColorArray>>();
+}
 
-	virtual Vector<Vector3> get_debug_mesh_lines() const override;
-	virtual real_t get_enclosing_radius() const override;
+void Variant::_unregister_variant_destructors() {
+	// Nothing to be done.
+}
 
-	RayShape3D();
-};
-#endif // RAY_SHAPE_H
+Variant::PTRDestructor Variant::get_ptr_destructor(Variant::Type p_type) {
+	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, nullptr);
+	return destruct_pointers[p_type];
+}
+
+bool Variant::has_destructor(Variant::Type p_type) {
+	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, false);
+	return destruct_pointers[p_type] != nullptr;
+}
