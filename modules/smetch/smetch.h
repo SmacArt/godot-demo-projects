@@ -26,7 +26,8 @@ public:
 		RADIUS,
 		CENTER,
     CURSOR_HIDDEN,
-    CURSOR_ARROW
+    CURSOR_ARROW,
+    GIMP
 };
 
   void set_properties(const Ref<SmetchProperties> &properties);
@@ -57,6 +58,10 @@ public:
   double max(double n1, double n2);
   double random(double from, double to);
   float frandom(float from, float to);
+
+  void add_color_to_palette(Color color);
+  void clear_palette();
+  void save_palette(String file_name, int format, double columns);
 
   void _ready();
   void _process(float delta);
@@ -89,6 +94,8 @@ private:
 	int rct_mode = CORNER;
   int cursor_mode = CURSOR_ARROW;
   Input::MouseMode parent_mouse_mode;
+
+  PackedColorArray palette_colors;
 };
 
 #endif // SMETCH_H

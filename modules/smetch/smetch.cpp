@@ -29,6 +29,10 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_ready"), &Smetch::_ready);
 	ClassDB::bind_method(D_METHOD("_process"), &Smetch::_process);
 
+	ClassDB::bind_method(D_METHOD("add_color_to_palette"), &Smetch::add_color_to_palette);
+	ClassDB::bind_method(D_METHOD("clear_palette"), &Smetch::clear_palette);
+	ClassDB::bind_method(D_METHOD("save_palette"), &Smetch::save_palette);
+
 	ClassDB::bind_method(D_METHOD("constrain"), &Smetch::constrain);
 	ClassDB::bind_method(D_METHOD("fconstrain"), &Smetch::fconstrain);
 	ClassDB::bind_method(D_METHOD("map"), &Smetch::map);
@@ -43,6 +47,7 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("CORNERS"), CORNERS);
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("RADIUS"), RADIUS);
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("CENTER"), CENTER);
+	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("GIMP"), GIMP);
 }
 
 void Smetch::set_properties(const Ref<SmetchProperties> &p_properties) {
@@ -66,11 +71,11 @@ Color Smetch::apply_color(float value1, float value2, float value3, float value4
 		to_color.b = value3 / maxes[2];
 		to_color.a = value4 / maxes[3];
 	}
-  return to_color;
+	return to_color;
 }
 
 Color Smetch::prime_color(Color color, float value1, float value2, float value3, float value4) {
-  return apply_color(value1, value2, value3, value4, color);
+	return apply_color(value1, value2, value3, value4, color);
 }
 
 void Smetch::background(float value1, float value2, float value3) {
@@ -83,7 +88,7 @@ void Smetch::fill(float value1, float value2, float value3) {
 }
 
 void Smetch::fill_with_color(Color color) {
-  fill_color = color;
+	fill_color = color;
 }
 
 void Smetch::rect(float x, float y, float w, float h) {
@@ -137,9 +142,9 @@ void Smetch::color_mode(int mode, float value1, float value2, float value3, floa
 			maxes[i] = color_maxes[clr_mode][i];
 		}
 
-    if (value1 == -1) {
-      // do nothing .. will uses the color_maxes defaults
-    } else if (value2 == -1) {
+		if (value1 == -1) {
+			// do nothing .. will uses the color_maxes defaults
+		} else if (value2 == -1) {
 			maxes[0] = value1; // Red
 			maxes[1] = value1; // Green
 			maxes[2] = value1; // Blue
@@ -239,14 +244,39 @@ void Smetch::_process(float delta) {
 	}
 }
 
+void Smetch::add_color_to_palette(Color color) {
+	palette_colors.append(color);
+}
+
+void Smetch::clear_palette() {
+	palette_colors.clear();
+}
+
+void Smetch::save_palette(String file_name, int format, double columns) {
+	if (format == GIMP) {
+		String new_line = "\n";
+		String s = "GIMP_Palette" + new_line;
+		s += "Name: " + file_name + new_line;
+		s += "Columns: " + itos(columns) + new_line;
+		s += "#" + new_line;
+
+		for (int i = 0; i < palette_colors.size(); i++) {
+			s += itos(palette_colors[i].r * 255) + " " +
+				 itos(palette_colors[i].g * 255) + " " +
+				 itos(palette_colors[i].b * 255) + new_line;
+		}
+
+		print_line(s);
+	}
+}
 
 Smetch::Smetch() {
-  print_line("constructor");
+	print_line("constructor");
 	random_number_generator = memnew(RandomNumberGenerator);
-  random_number_generator->set_seed(OS::get_singleton()->get_unix_time());
-  random_number_generator->randomize();
+	random_number_generator->set_seed(OS::get_singleton()->get_unix_time());
+	random_number_generator->randomize();
 	if (properties != nullptr) {
-    print_line("seeding: " + itos(properties->get_random_seed()) );
+		print_line("seeding: " + itos(properties->get_random_seed()));
 		random_number_generator->set_seed(properties->get_random_seed());
 	}
 }
@@ -262,10 +292,10 @@ float Smetch::frandom(float from, float to) {
 }
 
 double Smetch::constrain(double n, double low, double high) {
-  return max(min(n,high),low);
+	return max(min(n, high), low);
 }
 float Smetch::fconstrain(float n, float low, float high) {
-  return fmax(fmin(n,high),low);
+	return fmax(fmin(n, high), low);
 }
 
 double Smetch::map(double n, double start1, double stop1, double start2, double stop2) {
@@ -276,17 +306,17 @@ float Smetch::fmap(float n, float start1, float stop1, float start2, float stop2
 }
 
 double Smetch::min(double n1, double n2) {
-  return n1 < n2 ? n1 : n2;
+	return n1 < n2 ? n1 : n2;
 }
 double Smetch::max(double n1, double n2) {
-  return n1 > n2 ? n1 : n2;
+	return n1 > n2 ? n1 : n2;
 }
 
 Color Smetch::lerp_color(Color c1, Color c2, float amt) {
 	float l0, l1, l2, l3;
 	float from_array[4];
 	float to_array[4];
-  Color color;
+	Color color;
 
 	if (clr_mode == RGB) {
 		from_array[0] = c1.r;
@@ -328,6 +358,5 @@ Color Smetch::lerp_color(Color c1, Color c2, float amt) {
 		color.b = l2;
 		color.a = l3;
 	}
-  return color;
+	return color;
 }
-
