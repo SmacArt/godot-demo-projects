@@ -9,6 +9,7 @@
 #include "scene/main/viewport.h"
 #include "smetch_properties.h"
 #include "core/math/random_number_generator.h"
+#include "core/io/file_access.h"
 
 class Smetch : public TextureRect {
 	GDCLASS(Smetch, TextureRect);
@@ -45,6 +46,7 @@ public:
   void continuous_drawing(bool is_continuous);
 	void rect_mode(int mode);
 	String save_canvas(String file_name);
+  String save_palette(String file_name, int format, double columns);
 
 	Vector2 get_mouse_position();
   void update_cursor();
@@ -61,7 +63,6 @@ public:
 
   void add_color_to_palette(Color color);
   void clear_palette();
-  void save_palette(String file_name, int format, double columns);
 
   void _ready();
   void _process(float delta);

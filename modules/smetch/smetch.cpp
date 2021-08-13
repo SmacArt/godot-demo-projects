@@ -252,10 +252,10 @@ void Smetch::clear_palette() {
 	palette_colors.clear();
 }
 
-void Smetch::save_palette(String file_name, int format, double columns) {
+String Smetch::save_palette(String file_name, int format, double columns) {
 	if (format == GIMP) {
 		String new_line = "\n";
-		String s = "GIMP_Palette" + new_line;
+		String s = "GIMP Palette" + new_line;
 		s += "Name: " + file_name + new_line;
 		s += "Columns: " + itos(columns) + new_line;
 		s += "#" + new_line;
@@ -266,8 +266,17 @@ void Smetch::save_palette(String file_name, int format, double columns) {
 				 itos(palette_colors[i].b * 255) + new_line;
 		}
 
-		print_line(s);
+		String path = OS::get_singleton()->get_user_data_dir() + "/" + file_name + ".gpl";
+		FileAccess *file = FileAccess::open(path, FileAccess::WRITE);
+    if (!file) {
+      print_error("Cannot open file '" + path + "'");
+      return "";
+    }
+		file->store_string(s);
+		file->close();
+		return path;
 	}
+  return "";
 }
 
 Smetch::Smetch() {
