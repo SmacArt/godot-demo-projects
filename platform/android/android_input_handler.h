@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  line_builder.h                                                       */
+/*  android_input_handler.h                                              */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,59 +28,64 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef LINE_BUILDER_H
-#define LINE_BUILDER_H
+#ifndef ANDROID_INPUT_HANDLER_H
+#define ANDROID_INPUT_HANDLER_H
 
-#include "line_2d.h"
+#include "core/input/input.h"
 
-class LineBuilder {
+// This class encapsulates all the handling of input events that come from the Android UI thread.
+// Remarks:
+// - It's not thread-safe by itself, so its functions must only be called on a single thread, which is the Android UI thread.
+// - Its functions must only call thread-safe methods.
+class AndroidInputHandler {
 public:
-	// TODO Move in a struct and reference it
-	// Input
-	Vector<Vector2> points;
-	Line2D::LineJointMode joint_mode = Line2D::LINE_JOINT_SHARP;
-	Line2D::LineCapMode begin_cap_mode = Line2D::LINE_CAP_NONE;
-	Line2D::LineCapMode end_cap_mode = Line2D::LINE_CAP_NONE;
-	float width = 10.0;
-	Curve *curve = nullptr;
-	Color default_color = Color(0.4, 0.5, 1);
-	Gradient *gradient = nullptr;
-	Line2D::LineTextureMode texture_mode = Line2D::LineTextureMode::LINE_TEXTURE_NONE;
-	float sharp_limit = 2.f;
-	int round_precision = 8;
-	float tile_aspect = 1.f; // w/h
-	// TODO offset_joints option (offers alternative implementation of round joints)
-
-	// TODO Move in a struct and reference it
-	// Output
-	Vector<Vector2> vertices;
-	Vector<Color> colors;
-	Vector<Vector2> uvs;
-	Vector<int> indices;
-
-	LineBuilder();
-
-	void build();
-	void clear_output();
-
-private:
-	enum Orientation {
-		UP = 0,
-		DOWN = 1
+	struct TouchPos {
+		int id = 0;
+		Point2 pos;
 	};
 
-	// Triangle-strip methods
-	void strip_begin(Vector2 up, Vector2 down, Color color, float uvx);
-	void strip_new_quad(Vector2 up, Vector2 down, Color color, float uvx);
-	void strip_add_quad(Vector2 up, Vector2 down, Color color, float uvx);
-	void strip_add_tri(Vector2 up, Orientation orientation);
-	void strip_add_arc(Vector2 center, float angle_delta, Orientation orientation);
+	enum {
+		JOY_EVENT_BUTTON = 0,
+		JOY_EVENT_AXIS = 1,
+		JOY_EVENT_HAT = 2
+	};
 
-	void new_arc(Vector2 center, Vector2 vbegin, float angle_delta, Color color, Rect2 uv_rect);
+	struct JoypadEvent {
+		int device = 0;
+		int type = 0;
+		int index = 0;
+		bool pressed = false;
+		float value = 0;
+		int hat = 0;
+	};
 
 private:
-	bool _interpolate_color = false;
-	int _last_index[2] = {}; // Index of last up and down vertices of the strip
+	bool alt_mem = false;
+	bool shift_mem = false;
+	bool control_mem = false;
+	bool meta_mem = false;
+
+	MouseButton buttons_state = MOUSE_BUTTON_NONE;
+
+	Vector<TouchPos> touch;
+	Point2 hover_prev_pos; // needed to calculate the relative position on hover events
+	Point2 scroll_prev_pos; // needed to calculate the relative position on scroll events
+
+	void _set_key_modifier_state(Ref<InputEventWithModifiers> ev);
+
+	static MouseButton _button_index_from_mask(MouseButton button_mask);
+	static MouseButton _android_button_mask_to_godot_button_mask(int android_button_mask);
+
+	void _wheel_button_click(MouseButton event_buttons_mask, const Ref<InputEventMouseButton> &ev, MouseButton wheel_button, float factor);
+
+public:
+	void process_touch(int p_event, int p_pointer, const Vector<TouchPos> &p_points);
+	void process_hover(int p_type, Point2 p_pos);
+	void process_mouse_event(int input_device, int event_action, int event_android_buttons_mask, Point2 event_pos, float event_vertical_factor = 0, float event_horizontal_factor = 0);
+	void process_double_tap(int event_android_button_mask, Point2 p_pos);
+	void process_scroll(Point2 p_pos);
+	void process_joy_event(JoypadEvent p_event);
+	void process_key_event(int p_keycode, int p_scancode, int p_unicode_char, bool p_pressed);
 };
 
-#endif // LINE_BUILDER_H
+#endif
