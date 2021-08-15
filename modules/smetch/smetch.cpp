@@ -209,14 +209,6 @@ void Smetch::rect_mode(int mode) {
 	}
 }
 
-String Smetch::save_canvas(String file_name) {
-	Ref<Image> image = get_viewport()->get_texture()->get_image();
-	String dir = OS::get_singleton()->get_user_data_dir();
-	String save_location = dir + "/" + file_name + "_" + itos(OS::get_singleton()->get_unix_time()) + ".png";
-	image->save_png(save_location);
-	return save_location;
-}
-
 Vector2 Smetch::get_mouse_position() {
 	return get_local_mouse_position();
 }
@@ -252,6 +244,14 @@ void Smetch::clear_palette() {
 	palette_colors.clear();
 }
 
+String Smetch::save_canvas(String file_name) {
+	Ref<Image> image = get_viewport()->get_texture()->get_image();
+	String dir = OS::get_singleton()->get_user_data_dir();
+	String save_location = dir + "/" + file_name + "_" + itos(OS::get_singleton()->get_unix_time()) + ".png";
+	image->save_png(save_location);
+	return save_location;
+}
+
 String Smetch::save_palette(String file_name, int format, double columns) {
 	if (format == GIMP) {
 		String new_line = "\n";
@@ -266,17 +266,17 @@ String Smetch::save_palette(String file_name, int format, double columns) {
 				 itos(palette_colors[i].b * 255) + new_line;
 		}
 
-		String path = OS::get_singleton()->get_user_data_dir() + "/" + file_name + ".gpl";
+		String path = OS::get_singleton()->get_user_data_dir() + "/" + file_name + "_" + itos(OS::get_singleton()->get_unix_time()) + ".gpl";
 		FileAccess *file = FileAccess::open(path, FileAccess::WRITE);
     if (!file) {
-      print_error("Cannot open file '" + path + "'");
-      return "";
+			print_error("Cannot open file '" + path + "'");
+			return "";
     }
 		file->store_string(s);
 		file->close();
 		return path;
 	}
-  return "";
+	return "";
 }
 
 Smetch::Smetch() {
