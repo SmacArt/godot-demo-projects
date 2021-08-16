@@ -14,6 +14,9 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("prime_color", "value1", "value2", "value3", "value4"), &Smetch::prime_color, DEFVAL(Color()), DEFVAL(1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("background"), &Smetch::background);
 	ClassDB::bind_method(D_METHOD("create_canvas"), &Smetch::create_canvas);
+	ClassDB::bind_method(D_METHOD("create"), &Smetch::create);
+	ClassDB::bind_method(D_METHOD("resize_canvas"), &Smetch::resize_canvas);
+	ClassDB::bind_method(D_METHOD("resize"), &Smetch::resize);
 	ClassDB::bind_method(D_METHOD("continuous_drawing"), &Smetch::continuous_drawing);
 	ClassDB::bind_method(D_METHOD("fill"), &Smetch::fill);
 	ClassDB::bind_method(D_METHOD("fill_with_color"), &Smetch::fill_with_color);
@@ -33,6 +36,10 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("clear_palette"), &Smetch::clear_palette);
 	ClassDB::bind_method(D_METHOD("save_palette"), &Smetch::save_palette);
 
+	ClassDB::bind_method(D_METHOD("load_image"), &Smetch::load_image);
+	ClassDB::bind_method(D_METHOD("load_image_texture"), &Smetch::load_image_texture);
+	ClassDB::bind_method(D_METHOD("open_file_dialog"), &Smetch::open_file_dialog);
+
 	ClassDB::bind_method(D_METHOD("constrain"), &Smetch::constrain);
 	ClassDB::bind_method(D_METHOD("fconstrain"), &Smetch::fconstrain);
 	ClassDB::bind_method(D_METHOD("map"), &Smetch::map);
@@ -48,6 +55,8 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("RADIUS"), RADIUS);
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("CENTER"), CENTER);
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("GIMP"), GIMP);
+
+	ADD_SIGNAL(MethodInfo("file_selected"));
 }
 
 void Smetch::set_properties(const Ref<SmetchProperties> &p_properties) {
@@ -162,19 +171,26 @@ void Smetch::color_mode(int mode, float value1, float value2, float value3, floa
 	}
 }
 
-void Smetch::create_canvas(int x, int y) {
-	// TODO : if this gets called again then need to clear the old objects
-
-	Size2 this_size = Size2(x, y);
-	this->set_size(this_size);
-	this->set_expand(true);
-
+void Smetch::create_canvas(double x, double y) {
+	create(x, y);
+	background_rect = Rect2(Point2(0, 0), get_size());
 	canvas_texture = memnew(CanvasTexture);
 	set_texture(canvas_texture);
+}
 
-	background_rect = Rect2(Point2(0, 0), get_size());
-
+void Smetch::create(double x, double y) {
+	// TODO : if this gets called again then need to clear the old objects
+	resize(x, y);
 	parent_mouse_mode = Input::get_singleton()->get_mouse_mode();
+}
+
+void Smetch::resize_canvas(double x, double y) {
+	resize(x, y);
+	background_rect.set_size(Size2(x, y));
+}
+
+void Smetch::resize(double x, double y) {
+	this->set_size(Size2(x, y));
 }
 
 void Smetch::no_stroke() {
@@ -268,15 +284,76 @@ String Smetch::save_palette(String file_name, int format, double columns) {
 
 		String path = OS::get_singleton()->get_user_data_dir() + "/" + file_name + "_" + itos(OS::get_singleton()->get_unix_time()) + ".gpl";
 		FileAccess *file = FileAccess::open(path, FileAccess::WRITE);
-    if (!file) {
+		if (!file) {
 			print_error("Cannot open file '" + path + "'");
 			return "";
-    }
+		}
 		file->store_string(s);
 		file->close();
 		return path;
 	}
 	return "";
+}
+
+void Smetch::open_file_dialog() {
+	if (file_dialog == nullptr) {
+		file_dialog = memnew(FileDialog);
+		file_dialog->set_access(FileDialog::ACCESS_FILESYSTEM);
+		file_dialog->set_file_mode(FileDialog::FILE_MODE_OPEN_FILE);
+		file_dialog->set_title("Open Image");
+		file_dialog->add_filter("*.jpg ; JPG Images");
+		file_dialog->add_filter("*.png ; PNG Images");
+		add_child(file_dialog);
+
+		file_dialog->connect("file_selected", callable_mp(this, &Smetch::_on_FileDialog_file_selected));
+	}
+	file_dialog->popup_file_dialog();
+}
+
+Ref<Image> Smetch::load_image(String path) {
+  Ref<Image> image = memnew(Image);
+  image->load(path);
+	return image;
+}
+
+Ref<ImageTexture> Smetch::load_image_texture(String path) {
+  Ref<ImageTexture> image_texture = memnew(ImageTexture);
+  image_texture->create_from_image(load_image(path));
+	return image_texture;
+}
+
+void Smetch::_on_FileDialog_file_selected(const String path) {
+	emit_signal(SNAME("file_selected"), path);
+
+	/*
+
+	String p = path;
+	if (p.ends_with(".png") || p.ends_with(".PNG") || p.ends_with(".jpg") || p.ends_with(".JPG")) {
+
+		Ref<Image> image = memnew(Image);
+		image->load(p);
+
+		if (image->get_size().x > max_width) {
+			float scale = max_width / image->get_size().x
+											  image.resize(max_width, image->get_size().y * scale)
+		}
+
+		if (image->get_size().y > max_height) {
+			float scale = max_height / image.get_size().y
+											   image.resize(image.get_size().y * scale, max_height)
+		}
+
+		if (image->get_size().x < width && image->get_size().y < height) {
+			if (image->get_size().x < width) {
+				image->resize(width, image->get_size().y);
+			}
+			if (image->get_size().y < height) {
+				image->resize(image.get_size().x, height)
+			}
+		}
+
+	loaded_image->create_from_image(image);
+  */
 }
 
 Smetch::Smetch() {
@@ -288,6 +365,7 @@ Smetch::Smetch() {
 		print_line("seeding: " + itos(properties->get_random_seed()));
 		random_number_generator->set_seed(properties->get_random_seed());
 	}
+
 }
 Smetch::~Smetch() {}
 

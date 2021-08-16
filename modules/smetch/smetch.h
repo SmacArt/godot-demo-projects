@@ -10,6 +10,7 @@
 #include "smetch_properties.h"
 #include "core/math/random_number_generator.h"
 #include "core/io/file_access.h"
+#include "scene/gui/file_dialog.h"
 
 class Smetch : public TextureRect {
 	GDCLASS(Smetch, TextureRect);
@@ -36,7 +37,10 @@ public:
 
 	void background(float value1, float value2, float value3);
 	void color_mode(int mode, float value1, float value2, float value3, float value4);
-	void create_canvas(int x, int y);
+	void create_canvas(double x, double y);
+	void create(double x, double y);
+	void resize_canvas(double x, double y);
+	void resize(double x, double y);
 	void fill(float value1, float value2, float value3);
 	Color prime_color(Color color, float value1, float value2, float value3, float value4);
 	void fill_with_color(Color color);
@@ -64,6 +68,12 @@ public:
   void add_color_to_palette(Color color);
   void clear_palette();
 
+  void open_file_dialog();
+  Ref<Image> load_image(String path);
+  Ref<ImageTexture>load_image_texture(String path);
+
+  void _on_FileDialog_file_selected(const String path);
+
   void _ready();
   void _process(float delta);
 
@@ -82,6 +92,7 @@ private:
 	Rect2 background_rect;
 	CanvasTexture *canvas_texture;
   RandomNumberGenerator *random_number_generator;
+  FileDialog *file_dialog = nullptr;
 
 	int clr_mode = RGB;
 	int color_maxes[3][4] = {
