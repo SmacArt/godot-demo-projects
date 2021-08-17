@@ -70,7 +70,7 @@ public:
 
   void open_file_dialog();
   Ref<Image> load_image(String path);
-  Ref<ImageTexture>load_image_texture(String path);
+  Ref<ImageTexture>load_image_texture(String path, double max_width, double max_height);
 
   void _on_FileDialog_file_selected(const String path);
 

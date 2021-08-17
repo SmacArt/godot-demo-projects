@@ -311,49 +311,31 @@ void Smetch::open_file_dialog() {
 }
 
 Ref<Image> Smetch::load_image(String path) {
-  Ref<Image> image = memnew(Image);
-  image->load(path);
+	Ref<Image> image = memnew(Image);
+	image->load(path);
 	return image;
 }
 
-Ref<ImageTexture> Smetch::load_image_texture(String path) {
-  Ref<ImageTexture> image_texture = memnew(ImageTexture);
-  image_texture->create_from_image(load_image(path));
+Ref<ImageTexture> Smetch::load_image_texture(String path, double max_width, double max_height) {
+	Ref<ImageTexture> image_texture = memnew(ImageTexture);
+	Ref<Image> image = load_image(path);
+
+	if (image->get_size().x > max_width) {
+		float scale = max_width / image->get_size().x;
+		image->resize(max_width, image->get_size().y * scale);
+	}
+
+	if (image->get_size().y > max_height) {
+		float scale = max_height / image->get_size().y;
+		image->resize(image->get_size().x * scale, max_height);
+	}
+
+  image_texture->create_from_image(image);
 	return image_texture;
 }
 
 void Smetch::_on_FileDialog_file_selected(const String path) {
 	emit_signal(SNAME("file_selected"), path);
-
-	/*
-
-	String p = path;
-	if (p.ends_with(".png") || p.ends_with(".PNG") || p.ends_with(".jpg") || p.ends_with(".JPG")) {
-
-		Ref<Image> image = memnew(Image);
-		image->load(p);
-
-		if (image->get_size().x > max_width) {
-			float scale = max_width / image->get_size().x
-											  image.resize(max_width, image->get_size().y * scale)
-		}
-
-		if (image->get_size().y > max_height) {
-			float scale = max_height / image.get_size().y
-											   image.resize(image.get_size().y * scale, max_height)
-		}
-
-		if (image->get_size().x < width && image->get_size().y < height) {
-			if (image->get_size().x < width) {
-				image->resize(width, image->get_size().y);
-			}
-			if (image->get_size().y < height) {
-				image->resize(image.get_size().x, height)
-			}
-		}
-
-	loaded_image->create_from_image(image);
-  */
 }
 
 Smetch::Smetch() {
@@ -365,7 +347,6 @@ Smetch::Smetch() {
 		print_line("seeding: " + itos(properties->get_random_seed()));
 		random_number_generator->set_seed(properties->get_random_seed());
 	}
-
 }
 Smetch::~Smetch() {}
 
