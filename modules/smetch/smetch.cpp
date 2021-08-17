@@ -33,6 +33,7 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_process"), &Smetch::_process);
 
 	ClassDB::bind_method(D_METHOD("add_color_to_palette"), &Smetch::add_color_to_palette);
+	ClassDB::bind_method(D_METHOD("get_color_from_palette"), &Smetch::get_color_from_palette);
 	ClassDB::bind_method(D_METHOD("clear_palette"), &Smetch::clear_palette);
 	ClassDB::bind_method(D_METHOD("save_palette"), &Smetch::save_palette);
 
@@ -256,8 +257,19 @@ void Smetch::add_color_to_palette(Color color) {
 	palette_colors.append(color);
 }
 
+Color Smetch::get_color_from_palette(double position){
+  if (position < palette_colors.size()) {
+    return palette_colors.get(position);
+  }
+  print_error("get_color_from_palette failed as the position " + itos(position) + " is out of range");
+  return Color(); // TODO - proper error control
+}
+
 void Smetch::clear_palette() {
 	palette_colors.clear();
+
+  //SortArray<PackedColorArray
+
 }
 
 String Smetch::save_canvas(String file_name) {
@@ -427,4 +439,22 @@ Color Smetch::lerp_color(Color c1, Color c2, float amt) {
 		color.a = l3;
 	}
 	return color;
+}
+
+////////////////////////////////////////////////////////
+struct PackedColorArrayComparator {
+  Smetch::FilterOption order_option = Smetch::FilterOption::RED;
+
+  _FORCE_INLINE_ bool operator()(const Color &a, const Color &b) const {
+
+    return a.r < b.r;
+
+  }
+};
+
+void Smetch::sort_pallete_colors() {
+  TODO -- figure out this osrting
+  SortArray<Color, PackedColorArrayComparator> sorter;
+  sorter.compare.order_option = Smetch::FilterOption::BLUE;
+  sorter.sort(palette_colors., palette_colors.size());
 }
