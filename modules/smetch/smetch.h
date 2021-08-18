@@ -32,7 +32,7 @@ public:
 		GIMP
 	};
 
-	enum FilterOption {
+	enum PaletteSortMode {
 		RED,
 		GREEN,
 		BLUE,
@@ -40,7 +40,8 @@ public:
 		SATURATION,
 		BRIGHTNESS,
 		GRAYSCALE,
-		ALPHA
+		ALPHA,
+    NONE
 	};
 
 	void set_properties(const Ref<SmetchProperties> &properties);
@@ -61,7 +62,6 @@ public:
 	void continuous_drawing(bool is_continuous);
 	void rect_mode(int mode);
 	String save_canvas(String file_name);
-	String save_palette(String file_name, int format, double columns);
 
 	Vector2 get_mouse_position();
 	void update_cursor();
@@ -76,10 +76,11 @@ public:
 	double random(double from, double to);
 	float frandom(float from, float to);
 
-	void add_color_to_palette(Color color);
-	void clear_palette();
-	Color get_color_from_palette(double position);
-  void sort_pallete_colors();
+	void write_to_palette(Color color);
+	void reset_palette(double size);
+	Color read_from_palette(int index);
+  void sort_palette(int order);
+	String save_palette(String file_name, int format, double columns);
 
 	void open_file_dialog();
 	Ref<Image> load_image(String path);
@@ -119,7 +120,9 @@ private:
 	int cursor_mode = CURSOR_ARROW;
 	Input::MouseMode parent_mouse_mode;
 
-	PackedColorArray palette_colors;
+	Vector<Color> palette;
+  int palette_size = -1;
+  int palette_index;
 };
 
 #endif // SMETCH_H

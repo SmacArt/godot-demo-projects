@@ -32,9 +32,10 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_ready"), &Smetch::_ready);
 	ClassDB::bind_method(D_METHOD("_process"), &Smetch::_process);
 
-	ClassDB::bind_method(D_METHOD("add_color_to_palette"), &Smetch::add_color_to_palette);
-	ClassDB::bind_method(D_METHOD("get_color_from_palette"), &Smetch::get_color_from_palette);
-	ClassDB::bind_method(D_METHOD("clear_palette"), &Smetch::clear_palette);
+	ClassDB::bind_method(D_METHOD("write_to_palette"), &Smetch::write_to_palette);
+	ClassDB::bind_method(D_METHOD("read_from_palette"), &Smetch::read_from_palette);
+	ClassDB::bind_method(D_METHOD("reset_palette"), &Smetch::reset_palette);
+	ClassDB::bind_method(D_METHOD("sort_palette"), &Smetch::sort_palette);
 	ClassDB::bind_method(D_METHOD("save_palette"), &Smetch::save_palette);
 
 	ClassDB::bind_method(D_METHOD("load_image"), &Smetch::load_image);
@@ -56,6 +57,16 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("RADIUS"), RADIUS);
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("CENTER"), CENTER);
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("GIMP"), GIMP);
+
+	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("PaletteSortMode"), StringName("RED"), RED);
+	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("PaletteSortMode"), StringName("GREEN"), GREEN);
+	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("PaletteSortMode"), StringName("BLUE"), BLUE);
+	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("PaletteSortMode"), StringName("HUE"), HUE);
+	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("PaletteSortMode"), StringName("SATURATION"), SATURATION);
+	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("PaletteSortMode"), StringName("BRIGHTNESS"), BRIGHTNESS);
+	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("PaletteSortMode"), StringName("GRAYSCALE"), GRAYSCALE);
+	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("PaletteSortMode"), StringName("ALPHA"), ALPHA);
+	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("PaletteSortMode"), StringName("NONE"), NONE);
 
 	ADD_SIGNAL(MethodInfo("file_selected"));
 }
@@ -253,24 +264,43 @@ void Smetch::_process(float delta) {
 	}
 }
 
-void Smetch::add_color_to_palette(Color color) {
-	palette_colors.append(color);
+void Smetch::reset_palette(double size) {
+  palette.clear();
 }
 
-Color Smetch::get_color_from_palette(double position){
-  if (position < palette_colors.size()) {
-    return palette_colors.get(position);
-  }
-  print_error("get_color_from_palette failed as the position " + itos(position) + " is out of range");
-  return Color(); // TODO - proper error control
+void Smetch::write_to_palette(Color color) {
+	palette.push_back(color);
 }
 
-void Smetch::clear_palette() {
-	palette_colors.clear();
-
-  //SortArray<PackedColorArray
-
+Color Smetch::read_from_palette(int index) {
+	if (index < palette.size()) {
+		return palette[index];
+	}
+	print_error("get_color_from_palette failed as the position " + itos(index) + " is out of range");
+	return Color(); // TODO - proper error control
 }
+/*
+void Smetch::reset_palette(double size) {
+	if (palette_size > -1) {
+		memdelete_arr(palette);
+	}
+	palette_size = size;
+	palette = memnew_arr(Color, size);
+	palette_index = -1;
+}
+
+void Smetch::write_to_palette(Color color) {
+	palette[++palette_index] = color;
+}
+
+Color Smetch::read_from_palette(int index) {
+	if (index < palette_size) {
+		return palette[index];
+	}
+	print_error("get_color_from_palette failed as the position " + itos(index) + " is out of range");
+	return Color(); // TODO - proper error control
+}
+*/
 
 String Smetch::save_canvas(String file_name) {
 	Ref<Image> image = get_viewport()->get_texture()->get_image();
@@ -281,6 +311,7 @@ String Smetch::save_canvas(String file_name) {
 }
 
 String Smetch::save_palette(String file_name, int format, double columns) {
+	// TODO : check palette exists -- otherwise will crash
 	if (format == GIMP) {
 		String new_line = "\n";
 		String s = "GIMP Palette" + new_line;
@@ -288,10 +319,10 @@ String Smetch::save_palette(String file_name, int format, double columns) {
 		s += "Columns: " + itos(columns) + new_line;
 		s += "#" + new_line;
 
-		for (int i = 0; i < palette_colors.size(); i++) {
-			s += itos(palette_colors[i].r * 255) + " " +
-				 itos(palette_colors[i].g * 255) + " " +
-				 itos(palette_colors[i].b * 255) + new_line;
+		for (int i = 0; i < palette.size(); i++) {
+			s += itos(palette[i].r * 255) + " " +
+				 itos(palette[i].g * 255) + " " +
+				 itos(palette[i].b * 255) + new_line;
 		}
 
 		String path = OS::get_singleton()->get_user_data_dir() + "/" + file_name + "_" + itos(OS::get_singleton()->get_unix_time()) + ".gpl";
@@ -342,7 +373,7 @@ Ref<ImageTexture> Smetch::load_image_texture(String path, double max_width, doub
 		image->resize(image->get_size().x * scale, max_height);
 	}
 
-  image_texture->create_from_image(image);
+	image_texture->create_from_image(image);
 	return image_texture;
 }
 
@@ -360,6 +391,8 @@ Smetch::Smetch() {
 		random_number_generator->set_seed(properties->get_random_seed());
 	}
 }
+
+// TODO - free palette memory
 Smetch::~Smetch() {}
 
 ///////////////////////////////////////////////////////////////////
@@ -442,19 +475,35 @@ Color Smetch::lerp_color(Color c1, Color c2, float amt) {
 }
 
 ////////////////////////////////////////////////////////
-struct PackedColorArrayComparator {
-  Smetch::FilterOption order_option = Smetch::FilterOption::RED;
+struct ColorArrayComparator {
+	int sort_mode = Smetch::PaletteSortMode::RED;
 
-  _FORCE_INLINE_ bool operator()(const Color &a, const Color &b) const {
-
-    return a.r < b.r;
-
-  }
+	_FORCE_INLINE_ bool operator()(const Color &a, const Color &b) const {
+    /*
+		switch (sort_mode) {
+			case Smetch::PaletteSortMode::RED:
+				if (a.r < b.r)
+					return false;
+				return true;
+			case Smetch::PaletteSortMode::GREEN:
+				if (a.g < b.g)
+					return false;
+				return true;
+			case Smetch::PaletteSortMode::BLUE:
+				if (a.b < b.b)
+					return false;
+				return true;
+		}
+		// TODO - maybe a default or error message would be nice here
+    */
+		return true;
+	}
 };
 
-void Smetch::sort_pallete_colors() {
-  TODO -- figure out this osrting
-  SortArray<Color, PackedColorArrayComparator> sorter;
-  sorter.compare.order_option = Smetch::FilterOption::BLUE;
-  sorter.sort(palette_colors., palette_colors.size());
+void Smetch::sort_palette(int sort_mode) {
+	if (sort_mode != Smetch::PaletteSortMode::NONE) {
+		SortArray<Color, ColorArrayComparator> sorter;
+		sorter.compare.sort_mode = sort_mode;
+		sorter.sort(palette.ptrw(), palette.size());
+	}
 }
