@@ -577,8 +577,8 @@ void LineEdit::_notification(int p_what) {
 #ifdef TOOLS_ENABLED
 		case NOTIFICATION_ENTER_TREE: {
 			if (Engine::get_singleton()->is_editor_hint() && !get_tree()->is_node_being_edited(this)) {
-				set_caret_blink_enabled(EDITOR_DEF("text_editor/cursor/caret_blink", false));
-				set_caret_blink_speed(EDITOR_DEF("text_editor/cursor/caret_blink_speed", 0.65));
+				set_caret_blink_enabled(EDITOR_DEF("text_editor/appearance/caret/caret_blink", false));
+				set_caret_blink_speed(EDITOR_DEF("text_editor/appearance/caret/caret_blink_speed", 0.65));
 
 				if (!EditorSettings::get_singleton()->is_connected("settings_changed", callable_mp(this, &LineEdit::_editor_settings_changed))) {
 					EditorSettings::get_singleton()->connect("settings_changed", callable_mp(this, &LineEdit::_editor_settings_changed));
@@ -944,6 +944,17 @@ void LineEdit::paste_text() {
 			text_changed_dirty = true;
 		}
 	}
+}
+
+bool LineEdit::has_undo() const {
+	if (undo_stack_pos == nullptr) {
+		return undo_stack.size() > 1;
+	}
+	return undo_stack_pos != undo_stack.front();
+}
+
+bool LineEdit::has_redo() const {
+	return undo_stack_pos != nullptr && undo_stack_pos != undo_stack.back();
 }
 
 void LineEdit::undo() {
@@ -1824,8 +1835,8 @@ PopupMenu *LineEdit::get_menu() const {
 
 void LineEdit::_editor_settings_changed() {
 #ifdef TOOLS_ENABLED
-	set_caret_blink_enabled(EDITOR_DEF("text_editor/cursor/caret_blink", false));
-	set_caret_blink_speed(EDITOR_DEF("text_editor/cursor/caret_blink_speed", 0.65));
+	set_caret_blink_enabled(EDITOR_DEF("text_editor/appearance/caret/caret_blink", false));
+	set_caret_blink_speed(EDITOR_DEF("text_editor/appearance/caret/caret_blink_speed", 0.65));
 #endif
 }
 
@@ -2277,6 +2288,11 @@ void LineEdit::_ensure_menu() {
 	menu_dir->set_item_checked(menu_dir->get_item_index(MENU_DIR_AUTO), text_direction == TEXT_DIRECTION_AUTO);
 	menu_dir->set_item_checked(menu_dir->get_item_index(MENU_DIR_LTR), text_direction == TEXT_DIRECTION_LTR);
 	menu_dir->set_item_checked(menu_dir->get_item_index(MENU_DIR_RTL), text_direction == TEXT_DIRECTION_RTL);
+
+	if (editable) {
+		menu->set_item_disabled(menu->get_item_index(MENU_UNDO), !has_undo());
+		menu->set_item_disabled(menu->get_item_index(MENU_REDO), !has_redo());
+	}
 }
 
 LineEdit::LineEdit() {
