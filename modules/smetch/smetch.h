@@ -7,6 +7,7 @@
 #include "core/math/color.h"
 #include "core/math/random_number_generator.h"
 #include "core/os/os.h"
+#include "core/templates/sort_array.h"
 #include "scene/gui/file_dialog.h"
 #include "scene/gui/texture_rect.h"
 #include "scene/main/viewport.h"
@@ -19,6 +20,10 @@ protected:
 	static void _bind_methods();
 
 public:
+	struct Col {
+		int r, g, b, a;
+	};
+
 	enum Constants {
 		RGB,
 		HSB,
@@ -41,8 +46,44 @@ public:
 		BRIGHTNESS,
 		GRAYSCALE,
 		ALPHA,
-    NONE
+		NONE
 	};
+
+	struct RedPaletteComparator {
+		_FORCE_INLINE_ bool operator()(const Color &a, const Color &b) const {
+			return (a.r < b.r);
+		}
+	};
+	struct GreenPaletteComparator {
+		_FORCE_INLINE_ bool operator()(const Color &a, const Color &b) const {
+			return (a.g < b.g);
+		}
+	};
+	struct BluePaletteComparator {
+		_FORCE_INLINE_ bool operator()(const Color &a, const Color &b) const {
+			return (a.b < b.b);
+		}
+	};
+	struct HuePaletteComparator {
+		_FORCE_INLINE_ bool operator()(const Color &a, const Color &b) const {
+			return (a.get_h() < b.get_h());
+		}
+	};
+	struct SaturationPaletteComparator {
+		_FORCE_INLINE_ bool operator()(const Color &a, const Color &b) const {
+			return (a.get_s() < b.get_s());
+		}
+  };
+	struct BrightnessPaletteComparator {
+		_FORCE_INLINE_ bool operator()(const Color &a, const Color &b) const {
+			return (a.get_v() < b.get_v());
+		}
+  };
+	struct AlphaPaletteComparator {
+		_FORCE_INLINE_ bool operator()(const Color &a, const Color &b) const {
+			return (a.a < b.a);
+		}
+  };
 
 	void set_properties(const Ref<SmetchProperties> &properties);
 	Ref<SmetchProperties> get_properties() const;
@@ -77,9 +118,9 @@ public:
 	float frandom(float from, float to);
 
 	void write_to_palette(Color color);
-	void reset_palette(double size);
+	void reset_palette(int size);
 	Color read_from_palette(int index);
-  void sort_palette(int order);
+	void sort_palette(int order);
 	String save_palette(String file_name, int format, double columns);
 
 	void open_file_dialog();
@@ -97,6 +138,10 @@ private:
 	Color apply_color(float value1, float value2, float value3, float value4, Color to_color);
 	void mouse_entered();
 	void mouse_exited();
+
+	//  static int sort_comparator(const void * a, const void  * b );
+	void palette_quicksort(int low, int high);
+	int palette_sort_partition(int low, int high);
 
 	Ref<SmetchProperties> properties;
 
@@ -120,9 +165,18 @@ private:
 	int cursor_mode = CURSOR_ARROW;
 	Input::MouseMode parent_mouse_mode;
 
-	Vector<Color> palette;
-  int palette_size = -1;
-  int palette_index;
+	Color *palette;
+	int palette_size = -1;
+	int palette_index;
+	int palette_cache_size = -1;
+
+	SortArray<Color, RedPaletteComparator> red_palette_sorter;
+	SortArray<Color, GreenPaletteComparator> green_palette_sorter;
+	SortArray<Color, BluePaletteComparator> blue_palette_sorter;
+	SortArray<Color, HuePaletteComparator> hue_palette_sorter;
+	SortArray<Color, SaturationPaletteComparator> saturation_palette_sorter;
+	SortArray<Color, BrightnessPaletteComparator> brightness_palette_sorter;
+	SortArray<Color, AlphaPaletteComparator> alpha_palette_sorter;
 };
 
 #endif // SMETCH_H

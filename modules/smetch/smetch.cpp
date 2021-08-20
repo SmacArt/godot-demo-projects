@@ -264,8 +264,9 @@ void Smetch::_process(float delta) {
 	}
 }
 
+/*
 void Smetch::reset_palette(double size) {
-  palette.clear();
+	palette.clear();
 }
 
 void Smetch::write_to_palette(Color color) {
@@ -279,18 +280,26 @@ Color Smetch::read_from_palette(int index) {
 	print_error("get_color_from_palette failed as the position " + itos(index) + " is out of range");
 	return Color(); // TODO - proper error control
 }
-/*
-void Smetch::reset_palette(double size) {
-	if (palette_size > -1) {
-		memdelete_arr(palette);
+*/
+
+void Smetch::reset_palette(int size) {
+	if (size > palette_cache_size) {
+		if (palette_cache_size > -1) {
+			memdelete_arr(palette);
+			print_line("==================== memDELETE");
+		}
+		palette = memnew_arr(Color, size);
+		palette_cache_size = size;
+		print_line("==================== memNEW-------------->" + itos(size));
 	}
 	palette_size = size;
-	palette = memnew_arr(Color, size);
 	palette_index = -1;
 }
 
 void Smetch::write_to_palette(Color color) {
+	//  print_line("write_to_palette " + itos(palette_index+1) + " r->" + itos(color.r) + " size->" + itos(palette_size));
 	palette[++palette_index] = color;
+	//print_line("write done");
 }
 
 Color Smetch::read_from_palette(int index) {
@@ -300,7 +309,6 @@ Color Smetch::read_from_palette(int index) {
 	print_error("get_color_from_palette failed as the position " + itos(index) + " is out of range");
 	return Color(); // TODO - proper error control
 }
-*/
 
 String Smetch::save_canvas(String file_name) {
 	Ref<Image> image = get_viewport()->get_texture()->get_image();
@@ -319,7 +327,7 @@ String Smetch::save_palette(String file_name, int format, double columns) {
 		s += "Columns: " + itos(columns) + new_line;
 		s += "#" + new_line;
 
-		for (int i = 0; i < palette.size(); i++) {
+		for (int i = 0; i < palette_size; i++) {
 			s += itos(palette[i].r * 255) + " " +
 				 itos(palette[i].g * 255) + " " +
 				 itos(palette[i].b * 255) + new_line;
@@ -475,35 +483,34 @@ Color Smetch::lerp_color(Color c1, Color c2, float amt) {
 }
 
 ////////////////////////////////////////////////////////
-struct ColorArrayComparator {
-	int sort_mode = Smetch::PaletteSortMode::RED;
-
-	_FORCE_INLINE_ bool operator()(const Color &a, const Color &b) const {
-    /*
-		switch (sort_mode) {
-			case Smetch::PaletteSortMode::RED:
-				if (a.r < b.r)
-					return false;
-				return true;
-			case Smetch::PaletteSortMode::GREEN:
-				if (a.g < b.g)
-					return false;
-				return true;
-			case Smetch::PaletteSortMode::BLUE:
-				if (a.b < b.b)
-					return false;
-				return true;
-		}
-		// TODO - maybe a default or error message would be nice here
-    */
-		return true;
-	}
-};
-
 void Smetch::sort_palette(int sort_mode) {
 	if (sort_mode != Smetch::PaletteSortMode::NONE) {
-		SortArray<Color, ColorArrayComparator> sorter;
-		sorter.compare.sort_mode = sort_mode;
-		sorter.sort(palette.ptrw(), palette.size());
+		if (palette_size > 1) {
+			switch (sort_mode) {
+				case PaletteSortMode::RED:
+					red_palette_sorter.sort(palette, palette_size);
+					break;
+				case PaletteSortMode::GREEN:
+					green_palette_sorter.sort(palette, palette_size);
+					break;
+				case PaletteSortMode::BLUE:
+					blue_palette_sorter.sort(palette, palette_size);
+					break;
+				case PaletteSortMode::HUE:
+					hue_palette_sorter.sort(palette, palette_size);
+					break;
+				case PaletteSortMode::SATURATION:
+					saturation_palette_sorter.sort(palette, palette_size);
+					break;
+				case PaletteSortMode::BRIGHTNESS:
+					brightness_palette_sorter.sort(palette, palette_size);
+					break;
+				case PaletteSortMode::ALPHA:
+					alpha_palette_sorter.sort(palette, palette_size);
+					break;
+				default:
+					print_error("Sort mode not supported :" + itos(sort_mode));
+			}
+		}
 	}
 }
