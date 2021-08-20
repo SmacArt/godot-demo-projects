@@ -33,7 +33,7 @@ public:
 		RADIUS,
 		CENTER,
 		CURSOR_HIDDEN,
-		CURSOR_ARROW,
+		CURSOR_VISIBLE,
 		GIMP
 	};
 
@@ -84,6 +84,11 @@ public:
 			return (a.a < b.a);
 		}
   };
+	struct GrayscalePaletteComparator {
+		_FORCE_INLINE_ bool operator()(const Color &a, const Color &b) const {
+			return ((a.r + a.g + a.b) / 3.0 < (b.r + b.g + b.b) / 3.0);
+		}
+  };
 
 	void set_properties(const Ref<SmetchProperties> &properties);
 	Ref<SmetchProperties> get_properties() const;
@@ -106,6 +111,8 @@ public:
 
 	Vector2 get_mouse_position();
 	void update_cursor();
+  void set_cursor_busy();
+  void set_cursor_not_busy();
 	Color get_current_color();
 	Color lerp_color(Color c1, Color c2, float amt);
 	double map(double n, double start1, double stop1, double start2, double stop2);
@@ -176,6 +183,7 @@ private:
 	SortArray<Color, HuePaletteComparator> hue_palette_sorter;
 	SortArray<Color, SaturationPaletteComparator> saturation_palette_sorter;
 	SortArray<Color, BrightnessPaletteComparator> brightness_palette_sorter;
+	SortArray<Color, GrayscalePaletteComparator> grayscale_palette_sorter;
 	SortArray<Color, AlphaPaletteComparator> alpha_palette_sorter;
 };
 

@@ -22,6 +22,8 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("fill_with_color"), &Smetch::fill_with_color);
 	ClassDB::bind_method(D_METHOD("rect"), &Smetch::rect);
 	ClassDB::bind_method(D_METHOD("no_cursor"), &Smetch::no_cursor);
+	ClassDB::bind_method(D_METHOD("set_cursor_busy"), &Smetch::set_cursor_busy);
+	ClassDB::bind_method(D_METHOD("set_cursor_not_busy"), &Smetch::set_cursor_not_busy);
 	ClassDB::bind_method(D_METHOD("no_stroke"), &Smetch::no_stroke);
 	ClassDB::bind_method(D_METHOD("rect_mode"), &Smetch::rect_mode);
 	ClassDB::bind_method(D_METHOD("save_canvas"), &Smetch::save_canvas);
@@ -224,6 +226,14 @@ void Smetch::update_cursor() {
 	}
 }
 
+void Smetch::set_cursor_busy() {
+	set_default_cursor_shape(CURSOR_BUSY);
+}
+
+void Smetch::set_cursor_not_busy() {
+	set_default_cursor_shape(CURSOR_ARROW);
+}
+
 void Smetch::continuous_drawing(bool is_continuous) {
 	is_continuous_drawing = is_continuous;
 }
@@ -264,42 +274,20 @@ void Smetch::_process(float delta) {
 	}
 }
 
-/*
-void Smetch::reset_palette(double size) {
-	palette.clear();
-}
-
-void Smetch::write_to_palette(Color color) {
-	palette.push_back(color);
-}
-
-Color Smetch::read_from_palette(int index) {
-	if (index < palette.size()) {
-		return palette[index];
-	}
-	print_error("get_color_from_palette failed as the position " + itos(index) + " is out of range");
-	return Color(); // TODO - proper error control
-}
-*/
-
 void Smetch::reset_palette(int size) {
 	if (size > palette_cache_size) {
 		if (palette_cache_size > -1) {
 			memdelete_arr(palette);
-			print_line("==================== memDELETE");
 		}
 		palette = memnew_arr(Color, size);
 		palette_cache_size = size;
-		print_line("==================== memNEW-------------->" + itos(size));
 	}
 	palette_size = size;
 	palette_index = -1;
 }
 
 void Smetch::write_to_palette(Color color) {
-	//  print_line("write_to_palette " + itos(palette_index+1) + " r->" + itos(color.r) + " size->" + itos(palette_size));
 	palette[++palette_index] = color;
-	//print_line("write done");
 }
 
 Color Smetch::read_from_palette(int index) {
@@ -390,18 +378,21 @@ void Smetch::_on_FileDialog_file_selected(const String path) {
 }
 
 Smetch::Smetch() {
-	print_line("constructor");
 	random_number_generator = memnew(RandomNumberGenerator);
 	random_number_generator->set_seed(OS::get_singleton()->get_unix_time());
 	random_number_generator->randomize();
 	if (properties != nullptr) {
+    // todo - this never seems to happen
 		print_line("seeding: " + itos(properties->get_random_seed()));
 		random_number_generator->set_seed(properties->get_random_seed());
 	}
 }
 
-// TODO - free palette memory
-Smetch::~Smetch() {}
+Smetch::~Smetch() {
+	if (palette_cache_size > -1) {
+		memdelete_arr(palette);
+	}
+}
 
 ///////////////////////////////////////////////////////////////////
 double Smetch::random(double from, double to) {
@@ -504,6 +495,9 @@ void Smetch::sort_palette(int sort_mode) {
 					break;
 				case PaletteSortMode::BRIGHTNESS:
 					brightness_palette_sorter.sort(palette, palette_size);
+					break;
+				case PaletteSortMode::GRAYSCALE:
+					grayscale_palette_sorter.sort(palette, palette_size);
 					break;
 				case PaletteSortMode::ALPHA:
 					alpha_palette_sorter.sort(palette, palette_size);
