@@ -121,7 +121,7 @@ public:
 	float fconstrain(float n, float low, float high);
 	double min(double n1, double n2);
 	double max(double n1, double n2);
-	double random(double from, double to);
+	int random(int from, int to);
 	float frandom(float from, float to);
 
 	void write_to_palette(Color color);

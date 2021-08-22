@@ -395,7 +395,7 @@ Smetch::~Smetch() {
 }
 
 ///////////////////////////////////////////////////////////////////
-double Smetch::random(double from, double to) {
+int Smetch::random(int from, int to) {
 	return random_number_generator->randi_range(from, to);
 }
 
