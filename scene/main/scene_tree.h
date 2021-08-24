@@ -92,10 +92,7 @@ private:
 
 	uint64_t tree_version = 1;
 	double physics_process_time = 1.0;
-	double physics_total_time = 0.0;
-	double process_total_time = 0.0;
 	double process_time = 1.0;
-
 	bool accept_quit = true;
 	bool quit_on_go_back = true;
 
@@ -207,8 +204,14 @@ private:
 	void _main_window_close();
 	void _main_window_go_back();
 
+	enum CallInputType {
+		CALL_INPUT_TYPE_INPUT,
+		CALL_INPUT_TYPE_UNHANDLED_INPUT,
+		CALL_INPUT_TYPE_UNHANDLED_KEY_INPUT,
+	};
+
 	//used by viewport
-	void _call_input_pause(const StringName &p_group, const StringName &p_method, const Ref<InputEvent> &p_input, Viewport *p_viewport);
+	void _call_input_pause(const StringName &p_group, CallInputType p_call_type, const Ref<InputEvent> &p_input, Viewport *p_viewport);
 
 protected:
 	void _notification(int p_notification);
@@ -251,9 +254,7 @@ public:
 	void quit(int p_exit_code = EXIT_SUCCESS);
 
 	_FORCE_INLINE_ double get_physics_process_time() const { return physics_process_time; }
-	_FORCE_INLINE_ double get_physics_total_time() const { return physics_total_time; }
 	_FORCE_INLINE_ double get_process_time() const { return process_time; }
-	_FORCE_INLINE_ double get_process_total_time() const { return process_total_time; }
 
 #ifdef TOOLS_ENABLED
 	bool is_node_being_edited(const Node *p_node) const;

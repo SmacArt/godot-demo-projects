@@ -51,10 +51,6 @@ GraphEditFilter::GraphEditFilter(GraphEdit *p_edit) {
 	ge = p_edit;
 }
 
-void GraphEditMinimap::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("_gui_input"), &GraphEditMinimap::_gui_input);
-}
-
 GraphEditMinimap::GraphEditMinimap(GraphEdit *p_edit) {
 	ge = p_edit;
 
@@ -148,7 +144,7 @@ Vector2 GraphEditMinimap::_convert_to_graph_position(const Vector2 &p_position) 
 	return graph_position;
 }
 
-void GraphEditMinimap::_gui_input(const Ref<InputEvent> &p_ev) {
+void GraphEditMinimap::gui_input(const Ref<InputEvent> &p_ev) {
 	ERR_FAIL_COND(p_ev.is_null());
 
 	if (!ge->is_minimap_enabled()) {
@@ -806,8 +802,9 @@ bool GraphEdit::is_in_hot_zone(const Vector2 &pos, const Vector2 &p_mouse_pos, c
 }
 
 PackedVector2Array GraphEdit::get_connection_line(const Vector2 &p_from, const Vector2 &p_to) {
-	if (get_script_instance() && get_script_instance()->get_script().is_valid() && get_script_instance()->has_method("_get_connection_line")) {
-		return get_script_instance()->call("_get_connection_line", p_from, p_to);
+	Vector<Vector2> ret;
+	if (GDVIRTUAL_CALL(_get_connection_line, p_from, p_to, ret)) {
+		return ret;
 	}
 
 	Curve2D curve;
@@ -819,19 +816,21 @@ PackedVector2Array GraphEdit::get_connection_line(const Vector2 &p_from, const V
 	return curve.tessellate();
 }
 
-void GraphEdit::_draw_connection_line(CanvasItem *p_where, const Vector2 &p_from, const Vector2 &p_to, const Color &p_color, const Color &p_to_color, float p_width) {
-	Vector<Vector2> points = get_connection_line(p_from, p_to);
+void GraphEdit::_draw_connection_line(CanvasItem *p_where, const Vector2 &p_from, const Vector2 &p_to, const Color &p_color, const Color &p_to_color, float p_width, float p_zoom) {
+	Vector<Vector2> points = get_connection_line(p_from / p_zoom, p_to / p_zoom);
+	Vector<Vector2> scaled_points;
 	Vector<Color> colors;
-	float length = p_from.distance_to(p_to);
+	float length = (p_from / p_zoom).distance_to(p_to / p_zoom);
 	for (int i = 0; i < points.size(); i++) {
-		float d = p_from.distance_to(points[i]) / length;
+		float d = (p_from / p_zoom).distance_to(points[i]) / length;
 		colors.push_back(p_color.lerp(p_to_color, d));
+		scaled_points.push_back(points[i] * p_zoom);
 	}
 
 #ifdef TOOLS_ENABLED
-	p_where->draw_polyline_colors(points, colors, Math::floor(p_width * EDSCALE), lines_antialiased);
+	p_where->draw_polyline_colors(scaled_points, colors, Math::floor(p_width * EDSCALE), lines_antialiased);
 #else
-	p_where->draw_polyline_colors(points, colors, p_width, lines_antialiased);
+	p_where->draw_polyline_colors(scaled_points, colors, p_width, lines_antialiased);
 #endif
 }
 
@@ -878,7 +877,7 @@ void GraphEdit::_connections_layer_draw() {
 			color = color.lerp(activity_color, E->get().activity);
 			tocolor = tocolor.lerp(activity_color, E->get().activity);
 		}
-		_draw_connection_line(connections_layer, frompos, topos, color, tocolor, lines_thickness);
+		_draw_connection_line(connections_layer, frompos, topos, color, tocolor, lines_thickness, zoom);
 	}
 
 	while (to_erase.size()) {
@@ -917,7 +916,7 @@ void GraphEdit::_top_layer_draw() {
 		if (!connecting_out) {
 			SWAP(pos, topos);
 		}
-		_draw_connection_line(top_layer, pos, topos, col, col, lines_thickness);
+		_draw_connection_line(top_layer, pos, topos, col, col, lines_thickness, zoom);
 	}
 
 	if (box_selecting) {
@@ -1021,7 +1020,7 @@ void GraphEdit::_minimap_draw() {
 			from_color = from_color.lerp(activity_color, E.activity);
 			to_color = to_color.lerp(activity_color, E.activity);
 		}
-		_draw_connection_line(minimap, from_position, to_position, from_color, to_color, 1.0);
+		_draw_connection_line(minimap, from_position, to_position, from_color, to_color, 0.1, minimap->_convert_from_graph_position(Vector2(zoom, zoom)).length());
 	}
 
 	// Draw the "camera" viewport.
@@ -1045,7 +1044,7 @@ void GraphEdit::set_selected(Node *p_child) {
 	}
 }
 
-void GraphEdit::_gui_input(const Ref<InputEvent> &p_ev) {
+void GraphEdit::gui_input(const Ref<InputEvent> &p_ev) {
 	ERR_FAIL_COND(p_ev.is_null());
 
 	Ref<InputEventMouseMotion> mm = p_ev;
@@ -2189,7 +2188,6 @@ void GraphEdit::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_right_disconnects", "enable"), &GraphEdit::set_right_disconnects);
 	ClassDB::bind_method(D_METHOD("is_right_disconnects_enabled"), &GraphEdit::is_right_disconnects_enabled);
 
-	ClassDB::bind_method(D_METHOD("_gui_input"), &GraphEdit::_gui_input);
 	ClassDB::bind_method(D_METHOD("_update_scroll_offset"), &GraphEdit::_update_scroll_offset);
 
 	ClassDB::bind_method(D_METHOD("get_zoom_hbox"), &GraphEdit::get_zoom_hbox);
@@ -2198,7 +2196,7 @@ void GraphEdit::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_selected", "node"), &GraphEdit::set_selected);
 
-	BIND_VMETHOD(MethodInfo(Variant::PACKED_VECTOR2_ARRAY, "_get_connection_line", PropertyInfo(Variant::VECTOR2, "from"), PropertyInfo(Variant::VECTOR2, "to")));
+	GDVIRTUAL_BIND(_get_connection_line, "from", "to")
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "right_disconnects"), "set_right_disconnects", "is_right_disconnects_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "scroll_offset"), "set_scroll_ofs", "get_scroll_ofs");

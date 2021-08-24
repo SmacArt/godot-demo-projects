@@ -122,9 +122,6 @@ private:
 		int network_master = 1; // Server by default.
 		Vector<MultiplayerAPI::RPCConfig> rpc_methods;
 
-		double process_cumulative_time = 0.0;
-		double physics_process_cumulative_time = 0.0;
-
 		// Variables used to properly sort the node when processing, ignored otherwise.
 		// TODO: Should move all the stuff below to bits.
 		bool physics_process = false;
@@ -210,6 +207,27 @@ protected:
 	void _add_child_nocheck(Node *p_child, const StringName &p_name);
 	void _set_owner_nocheck(Node *p_owner);
 	void _set_name_nocheck(const StringName &p_name);
+
+	//call from SceneTree
+	void _call_input(const Ref<InputEvent> &p_event);
+	void _call_unhandled_input(const Ref<InputEvent> &p_event);
+	void _call_unhandled_key_input(const Ref<InputEvent> &p_event);
+
+protected:
+	virtual void input(const Ref<InputEvent> &p_event);
+	virtual void unhandled_input(const Ref<InputEvent> &p_event);
+	virtual void unhandled_key_input(const Ref<InputEvent> &p_key_event);
+
+	GDVIRTUAL1(_process, double)
+	GDVIRTUAL1(_physics_process, double)
+	GDVIRTUAL0(_enter_tree)
+	GDVIRTUAL0(_exit_tree)
+	GDVIRTUAL0(_ready)
+	GDVIRTUAL0RC(Vector<String>, _get_configuration_warnings)
+
+	GDVIRTUAL1(_input, Ref<InputEvent>)
+	GDVIRTUAL1(_unhandled_input, Ref<InputEvent>)
+	GDVIRTUAL1(_unhandled_key_input, Ref<InputEvent>)
 
 public:
 	enum {
@@ -344,14 +362,10 @@ public:
 	/* PROCESSING */
 	void set_physics_process(bool p_process);
 	double get_physics_process_delta_time() const;
-	double get_physics_process_cumulative_time() const;
-	double get_physics_process_total_time() const;
 	bool is_physics_processing() const;
 
 	void set_process(bool p_process);
 	double get_process_delta_time() const;
-	double get_process_cumulative_time() const;
-	double get_process_total_time() const;
 	bool is_processing() const;
 
 	void set_physics_process_internal(bool p_process_internal);
