@@ -93,6 +93,7 @@ public:
 	void set_properties(const Ref<SmetchProperties> &properties);
 	Ref<SmetchProperties> get_properties() const;
 
+  void seed_random_number_generator(int seed);
 	void background(float value1, float value2, float value3);
 	void color_mode(int mode, float value1, float value2, float value3, float value4);
 	void create_canvas(double x, double y);
@@ -103,6 +104,7 @@ public:
 	Color prime_color(Color color, float value1, float value2, float value3, float value4);
 	void fill_with_color(Color color);
 	void rect(float x, float y, float w, float h);
+	void gradient_rect(float x, float y, float w, float h, Color c1, Color c2);
 	void no_cursor();
 	void no_stroke();
 	void continuous_drawing(bool is_continuous);
@@ -176,6 +178,9 @@ private:
 	int palette_size = -1;
 	int palette_index;
 	int palette_cache_size = -1;
+
+  Vector<Vector2> geometry_points;
+  Vector<Color> geometry_colors;
 
 	SortArray<Color, RedPaletteComparator> red_palette_sorter;
 	SortArray<Color, GreenPaletteComparator> green_palette_sorter;

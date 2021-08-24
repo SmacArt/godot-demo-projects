@@ -21,6 +21,8 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("fill"), &Smetch::fill);
 	ClassDB::bind_method(D_METHOD("fill_with_color"), &Smetch::fill_with_color);
 	ClassDB::bind_method(D_METHOD("rect"), &Smetch::rect);
+	ClassDB::bind_method(D_METHOD("gradient_rect"), &Smetch::gradient_rect);
+
 	ClassDB::bind_method(D_METHOD("no_cursor"), &Smetch::no_cursor);
 	ClassDB::bind_method(D_METHOD("set_cursor_busy"), &Smetch::set_cursor_busy);
 	ClassDB::bind_method(D_METHOD("set_cursor_not_busy"), &Smetch::set_cursor_not_busy);
@@ -50,6 +52,7 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("fmap"), &Smetch::fmap);
 	ClassDB::bind_method(D_METHOD("random"), &Smetch::random);
 	ClassDB::bind_method(D_METHOD("frandom"), &Smetch::frandom);
+	ClassDB::bind_method(D_METHOD("seed_random_number_generator"), &Smetch::seed_random_number_generator);
 
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("RGB"), RGB);
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("HSB"), HSB);
@@ -185,6 +188,25 @@ void Smetch::color_mode(int mode, float value1, float value2, float value3, floa
 	}
 }
 
+void Smetch::gradient_rect(float x, float y, float w, float h, Color c1, Color c2) {
+	geometry_points.clear();
+	geometry_colors.clear();
+
+	geometry_points.append(Point2(x, y));
+	geometry_points.append(Point2(x + w, y));
+	geometry_points.append(Point2(x + w, y + h));
+	geometry_points.append(Point2(x, y + h));
+
+	// top down
+	geometry_colors.append(c1);
+	geometry_colors.append(c1);
+	geometry_colors.append(c2);
+	geometry_colors.append(c2);
+
+	// TODO : left - right -> parameter driven
+	draw_polygon(geometry_points, geometry_colors, geometry_points);
+}
+
 void Smetch::create_canvas(double x, double y) {
 	create(x, y);
 	background_rect = Rect2(Point2(0, 0), get_size());
@@ -263,9 +285,23 @@ void Smetch::mouse_exited() {
 	Input::get_singleton()->set_mouse_mode(parent_mouse_mode);
 }
 
+void Smetch::seed_random_number_generator(int seed) {
+	random_number_generator->set_seed(seed);
+	random_number_generator->randomize();
+}
+
 void Smetch::_ready() {
 	connect("mouse_entered", callable_mp(this, &Smetch::mouse_entered));
 	connect("mouse_exited", callable_mp(this, &Smetch::mouse_exited));
+
+	random_number_generator = memnew(RandomNumberGenerator);
+	int seed = OS::get_singleton()->get_unix_time();
+	if (properties != nullptr) {
+		if (properties->get_random_seed() > 0) {
+      seed = properties->get_random_seed();
+		}
+	}
+  seed_random_number_generator(seed);
 }
 
 void Smetch::_process(float delta) {
@@ -382,9 +418,10 @@ Smetch::Smetch() {
 	random_number_generator->set_seed(OS::get_singleton()->get_unix_time());
 	random_number_generator->randomize();
 	if (properties != nullptr) {
-    // todo - this never seems to happen
+		// todo - this never seems to happen
 		print_line("seeding: " + itos(properties->get_random_seed()));
 		random_number_generator->set_seed(properties->get_random_seed());
+		random_number_generator->randomize();
 	}
 }
 
