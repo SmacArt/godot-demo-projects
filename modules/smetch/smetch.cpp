@@ -12,13 +12,14 @@ void Smetch::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("color_mode", "mode", "value1", "value2", "value3", "value4"), &Smetch::color_mode, DEFVAL(RGB), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("prime_color", "value1", "value2", "value3", "value4"), &Smetch::prime_color, DEFVAL(Color()), DEFVAL(1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
+	ClassDB::bind_method(D_METHOD("fill", "value1", "value2", "value3", "value4"), &Smetch::fill, DEFVAL(1), DEFVAL(1), DEFVAL(1), DEFVAL(-1));
+
 	ClassDB::bind_method(D_METHOD("background"), &Smetch::background);
 	ClassDB::bind_method(D_METHOD("create_canvas"), &Smetch::create_canvas);
 	ClassDB::bind_method(D_METHOD("create"), &Smetch::create);
 	ClassDB::bind_method(D_METHOD("resize_canvas"), &Smetch::resize_canvas);
 	ClassDB::bind_method(D_METHOD("resize"), &Smetch::resize);
 	ClassDB::bind_method(D_METHOD("continuous_drawing"), &Smetch::continuous_drawing);
-	ClassDB::bind_method(D_METHOD("fill"), &Smetch::fill);
 	ClassDB::bind_method(D_METHOD("fill_with_color"), &Smetch::fill_with_color);
 	ClassDB::bind_method(D_METHOD("rect"), &Smetch::rect);
 	ClassDB::bind_method(D_METHOD("gradient_rect"), &Smetch::gradient_rect);
@@ -109,8 +110,8 @@ void Smetch::background(float value1, float value2, float value3) {
 	draw_rect(background_rect, background_color);
 }
 
-void Smetch::fill(float value1, float value2, float value3) {
-	fill_color = apply_color(value1, value2, value3, -1, fill_color);
+void Smetch::fill(float value1, float value2, float value3, float value4) {
+	fill_color = apply_color(value1, value2, value3, value4, fill_color);
 }
 
 void Smetch::fill_with_color(Color color) {
