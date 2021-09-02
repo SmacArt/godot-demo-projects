@@ -13,8 +13,8 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("color_mode", "mode", "value1", "value2", "value3", "value4"), &Smetch::color_mode, DEFVAL(RGB), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("prime_color", "value1", "value2", "value3", "value4"), &Smetch::prime_color, DEFVAL(Color()), DEFVAL(1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("fill", "value1", "value2", "value3", "value4"), &Smetch::fill, DEFVAL(1), DEFVAL(1), DEFVAL(1), DEFVAL(-1));
+	ClassDB::bind_method(D_METHOD("background", "value1", "value2", "value3"), &Smetch::background, DEFVAL(1), DEFVAL(-1), DEFVAL(-1));
 
-	ClassDB::bind_method(D_METHOD("background"), &Smetch::background);
 	ClassDB::bind_method(D_METHOD("create_canvas"), &Smetch::create_canvas);
 	ClassDB::bind_method(D_METHOD("create"), &Smetch::create);
 	ClassDB::bind_method(D_METHOD("resize_canvas"), &Smetch::resize_canvas);
@@ -22,6 +22,13 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("continuous_drawing"), &Smetch::continuous_drawing);
 	ClassDB::bind_method(D_METHOD("fill_with_color"), &Smetch::fill_with_color);
 	ClassDB::bind_method(D_METHOD("rect"), &Smetch::rect);
+	ClassDB::bind_method(D_METHOD("line"), &Smetch::line);
+	ClassDB::bind_method(D_METHOD("translate"), &Smetch::translate);
+	ClassDB::bind_method(D_METHOD("push"), &Smetch::push);
+	ClassDB::bind_method(D_METHOD("pop"), &Smetch::pop);
+	ClassDB::bind_method(D_METHOD("translate_reset"), &Smetch::translate_reset);
+	ClassDB::bind_method(D_METHOD("stroke_weight"), &Smetch::stroke_weight);
+	ClassDB::bind_method(D_METHOD("stroke_color"), &Smetch::stroke_color);
 	ClassDB::bind_method(D_METHOD("gradient_rect"), &Smetch::gradient_rect);
 
 	ClassDB::bind_method(D_METHOD("no_cursor"), &Smetch::no_cursor);
@@ -106,11 +113,25 @@ Color Smetch::prime_color(Color color, float value1, float value2, float value3,
 }
 
 void Smetch::background(float value1, float value2, float value3) {
+  print_line("rect:w:" + itos(background_rect.get_size().x) + " h:" + itos(background_rect.get_size().y));
+	if (value2 == -1) {
+		value2 = value1;
+	}
+	if (value3 == -1) {
+		value3 = value1;
+	}
 	background_color = apply_color(value1, value2, value3, -1, background_color);
 	draw_rect(background_rect, background_color);
 }
 
 void Smetch::fill(float value1, float value2, float value3, float value4) {
+	if (value2 == -1) {
+		value2 = value1;
+	}
+	if (value3 == -1) {
+		value3 = value1;
+	}
+	background_color = apply_color(value1, value2, value3, -1, background_color);
 	fill_color = apply_color(value1, value2, value3, value4, fill_color);
 }
 
@@ -161,6 +182,26 @@ void Smetch::rect(float x, float y, float w, float h) {
 	}
 }
 
+void Smetch::line(float start_x, float start_y, float end_x, float end_y){
+  draw_line(Vector2(translation.x + start_x, translation.y + start_y), Vector2(translation.x + end_x, translation.y + end_y), stroke_clr, stroke_wgt);
+}
+
+void Smetch::translate(float x, float y) {
+  translation.x += x;
+  translation.y += y;
+}
+void Smetch::translate_reset() {
+  translation = Vector2(0,0);
+}
+
+void Smetch::stroke_color(Color color) {
+  stroke_clr = color;
+}
+
+void Smetch::stroke_weight(float weight) {
+  stroke_wgt = weight;
+}
+
 void Smetch::color_mode(int mode, float value1, float value2, float value3, float value4) {
 	if (mode == RGB || mode == HSB || mode == HSL) {
 		clr_mode = mode;
@@ -208,6 +249,24 @@ void Smetch::gradient_rect(float x, float y, float w, float h, Color c1, Color c
 	draw_polygon(geometry_points, geometry_colors, geometry_points);
 }
 
+void Smetch::pop() {
+	frame_buffer = get_viewport()->get_texture()->get_image();
+}
+
+void Smetch::push() {
+  if (frame_buffer == nullptr) {
+    frame_buffer = memnew(Ref<Image>);
+    print_line("new frame_buffer");
+  }
+	Ref<ImageTexture> image_texture = memnew(ImageTexture);
+  image_texture->create_from_image(frame_buffer);
+  draw_texture(image_texture,Point2(0,0));
+  /*
+  canvas_texture->copy_from(frame_buffer);
+  set_texture(canvas_texture);
+  */
+}
+
 void Smetch::create_canvas(double x, double y) {
 	create(x, y);
 	background_rect = Rect2(Point2(0, 0), get_size());
@@ -219,6 +278,7 @@ void Smetch::create(double x, double y) {
 	// TODO : if this gets called again then need to clear the old objects
 	resize(x, y);
 	parent_mouse_mode = Input::get_singleton()->get_mouse_mode();
+  color_mode(RGB,-1,-1,-1,-1);
 }
 
 void Smetch::resize_canvas(double x, double y) {
@@ -299,13 +359,14 @@ void Smetch::_ready() {
 	int seed = OS::get_singleton()->get_unix_time();
 	if (properties != nullptr) {
 		if (properties->get_random_seed() > 0) {
-      seed = properties->get_random_seed();
+			seed = properties->get_random_seed();
 		}
 	}
-  seed_random_number_generator(seed);
+	seed_random_number_generator(seed);
 }
 
 void Smetch::_process(float delta) {
+  translate_reset();
 	if (is_continuous_drawing) {
 		update();
 	}

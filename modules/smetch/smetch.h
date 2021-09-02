@@ -104,12 +104,21 @@ public:
 	Color prime_color(Color color, float value1, float value2, float value3, float value4);
 	void fill_with_color(Color color);
 	void rect(float x, float y, float w, float h);
+	void line(float start_x, float start_y, float end_x, float end_y);
+	void stroke(Color c);
+	void translate(float x, float y);
+	void translate_reset();
+	void stroke_color(Color color);
+	void stroke_weight(float weight);
 	void gradient_rect(float x, float y, float w, float h, Color c1, Color c2);
 	void no_cursor();
 	void no_stroke();
 	void continuous_drawing(bool is_continuous);
 	void rect_mode(int mode);
 	String save_canvas(String file_name);
+
+	void push();
+	void pop();
 
 	Vector2 get_mouse_position();
 	void update_cursor();
@@ -157,7 +166,11 @@ private:
 	Color fill_color;
 	Color background_color;
 	Rect2 background_rect;
+  Vector2 translation = Vector2(0.0,0.0);
+  float stroke_wgt = 1;
+  Color stroke_clr = Color(0,0,0);
 	CanvasTexture *canvas_texture;
+	Ref<Image> frame_buffer;
 	RandomNumberGenerator *random_number_generator;
 	FileDialog *file_dialog = nullptr;
 
