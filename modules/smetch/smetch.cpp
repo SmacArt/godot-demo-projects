@@ -1,6 +1,7 @@
 /* smetch.cpp */
 
 #include "smetch.h"
+#include "servers/rendering/rendering_server_globals.h"
 #include <math.h>
 #include <iostream>
 
@@ -20,6 +21,7 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("resize_canvas"), &Smetch::resize_canvas);
 	ClassDB::bind_method(D_METHOD("resize"), &Smetch::resize);
 	ClassDB::bind_method(D_METHOD("continuous_drawing"), &Smetch::continuous_drawing);
+	ClassDB::bind_method(D_METHOD("clear_mode"), &Smetch::clear_mode);
 	ClassDB::bind_method(D_METHOD("fill_with_color"), &Smetch::fill_with_color);
 	ClassDB::bind_method(D_METHOD("rect"), &Smetch::rect);
 	ClassDB::bind_method(D_METHOD("line"), &Smetch::line);
@@ -113,7 +115,13 @@ Color Smetch::prime_color(Color color, float value1, float value2, float value3,
 }
 
 void Smetch::background(float value1, float value2, float value3) {
-  print_line("rect:w:" + itos(background_rect.get_size().x) + " h:" + itos(background_rect.get_size().y));
+	if (clear_mde == SubViewport::CLEAR_MODE_NEVER) {
+		if (draw_background_draw_count > draw_background_draw_times) {
+			return;
+		}
+		draw_background_draw_count++;
+	}
+
 	if (value2 == -1) {
 		value2 = value1;
 	}
@@ -182,24 +190,24 @@ void Smetch::rect(float x, float y, float w, float h) {
 	}
 }
 
-void Smetch::line(float start_x, float start_y, float end_x, float end_y){
-  draw_line(Vector2(translation.x + start_x, translation.y + start_y), Vector2(translation.x + end_x, translation.y + end_y), stroke_clr, stroke_wgt);
+void Smetch::line(float start_x, float start_y, float end_x, float end_y) {
+	draw_line(Vector2(translation.x + start_x, translation.y + start_y), Vector2(translation.x + end_x, translation.y + end_y), stroke_clr, stroke_wgt);
 }
 
 void Smetch::translate(float x, float y) {
-  translation.x += x;
-  translation.y += y;
+	translation.x += x;
+	translation.y += y;
 }
 void Smetch::translate_reset() {
-  translation = Vector2(0,0);
+	translation = Vector2(0, 0);
 }
 
 void Smetch::stroke_color(Color color) {
-  stroke_clr = color;
+	stroke_clr = color;
 }
 
 void Smetch::stroke_weight(float weight) {
-  stroke_wgt = weight;
+	stroke_wgt = weight;
 }
 
 void Smetch::color_mode(int mode, float value1, float value2, float value3, float value4) {
@@ -250,21 +258,16 @@ void Smetch::gradient_rect(float x, float y, float w, float h, Color c1, Color c
 }
 
 void Smetch::pop() {
-	frame_buffer = get_viewport()->get_texture()->get_image();
+	do_buffer_image_copy = true;
 }
 
 void Smetch::push() {
-  if (frame_buffer == nullptr) {
-    frame_buffer = memnew(Ref<Image>);
-    print_line("new frame_buffer");
-  }
-	Ref<ImageTexture> image_texture = memnew(ImageTexture);
-  image_texture->create_from_image(frame_buffer);
-  draw_texture(image_texture,Point2(0,0));
-  /*
-  canvas_texture->copy_from(frame_buffer);
-  set_texture(canvas_texture);
-  */
+  // NOTE : the push and pop wasnt used so this might not work
+	if (buffer_image_is_available) {
+		Ref<ImageTexture> texture(memnew(ImageTexture));
+		texture->create_from_image(buffer_image);
+		draw_texture(texture, Point2(0, 0));
+	}
 }
 
 void Smetch::create_canvas(double x, double y) {
@@ -278,7 +281,7 @@ void Smetch::create(double x, double y) {
 	// TODO : if this gets called again then need to clear the old objects
 	resize(x, y);
 	parent_mouse_mode = Input::get_singleton()->get_mouse_mode();
-  color_mode(RGB,-1,-1,-1,-1);
+	color_mode(RGB, -1, -1, -1, -1);
 }
 
 void Smetch::resize_canvas(double x, double y) {
@@ -319,6 +322,11 @@ void Smetch::set_cursor_not_busy() {
 
 void Smetch::continuous_drawing(bool is_continuous) {
 	is_continuous_drawing = is_continuous;
+}
+
+void Smetch::clear_mode(SubViewport::ClearMode clear_mode) {
+	clear_mde = clear_mode;
+	RS::get_singleton()->viewport_set_clear_mode(get_viewport_rid(), RS::ViewportClearMode(clear_mode));
 }
 
 void Smetch::rect_mode(int mode) {
@@ -366,9 +374,19 @@ void Smetch::_ready() {
 }
 
 void Smetch::_process(float delta) {
-  translate_reset();
+	translate_reset();
 	if (is_continuous_drawing) {
 		update();
+	}
+	if (do_buffer_image_copy && get_texture() != nullptr) {
+		buffer_image = get_viewport()->get_texture()->get_image();
+		print_line("width:" + itos(buffer_image->get_width()));
+		//Ref<ImageTexture> texture(memnew(ImageTexture));
+		//texture->create_from_image(buffer_image);
+		//buffer_image_texture = texture;
+		buffer_image_is_available = true;
+		do_buffer_image_copy = false;
+		print_line("popped");
 	}
 }
 
@@ -397,10 +415,14 @@ Color Smetch::read_from_palette(int index) {
 }
 
 String Smetch::save_canvas(String file_name) {
-	Ref<Image> image = get_viewport()->get_texture()->get_image();
+	return save_canvas_with_image(file_name, get_viewport()->get_texture()->get_image());
+}
+
+String Smetch::save_canvas_with_image(String file_name, Ref<Image> image) {
 	String dir = OS::get_singleton()->get_user_data_dir();
 	String save_location = dir + "/" + file_name + "_" + itos(OS::get_singleton()->get_unix_time()) + ".png";
 	image->save_png(save_location);
+
 	return save_location;
 }
 
@@ -476,15 +498,6 @@ void Smetch::_on_FileDialog_file_selected(const String path) {
 }
 
 Smetch::Smetch() {
-	random_number_generator = memnew(RandomNumberGenerator);
-	random_number_generator->set_seed(OS::get_singleton()->get_unix_time());
-	random_number_generator->randomize();
-	if (properties != nullptr) {
-		// todo - this never seems to happen
-		print_line("seeding: " + itos(properties->get_random_seed()));
-		random_number_generator->set_seed(properties->get_random_seed());
-		random_number_generator->randomize();
-	}
 }
 
 Smetch::~Smetch() {

@@ -184,7 +184,10 @@ void RendererViewport::_draw_viewport(Viewport *p_viewport) {
 		_configure_3d_render_buffers(p_viewport);
 	}
 
-	RSG::storage->render_target_request_clear(p_viewport->render_target, bgcolor);
+  // Added By Steve McCulloch
+	if (p_viewport->clear_mode != RS::VIEWPORT_CLEAR_NEVER) {
+		RSG::storage->render_target_request_clear(p_viewport->render_target, bgcolor);
+	}
 
 	if (!scenario_draw_canvas_bg && can_draw_3d) {
 		_draw_3d(p_viewport);

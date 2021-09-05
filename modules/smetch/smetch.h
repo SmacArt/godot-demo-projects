@@ -114,8 +114,10 @@ public:
 	void no_cursor();
 	void no_stroke();
 	void continuous_drawing(bool is_continuous);
+	void clear_mode(SubViewport::ClearMode clear_mode);
 	void rect_mode(int mode);
 	String save_canvas(String file_name);
+	String save_canvas_with_image(String file_name, Ref<Image> image);
 
 	void push();
 	void pop();
@@ -170,9 +172,19 @@ private:
   float stroke_wgt = 1;
   Color stroke_clr = Color(0,0,0);
 	CanvasTexture *canvas_texture;
-	Ref<Image> frame_buffer;
 	RandomNumberGenerator *random_number_generator;
 	FileDialog *file_dialog = nullptr;
+
+  bool draw_background = false;
+  int draw_background_draw_times = 5;
+  int draw_background_draw_count = 0;
+
+	Ref<Image> buffer_image;
+  Ref<ImageTexture> buffer_image_texture;
+  bool do_buffer_image_copy = false;
+  bool buffer_image_is_available = false;
+
+  SubViewport::ClearMode clear_mde;
 
 	int clr_mode = RGB;
 	int color_maxes[3][4] = {
