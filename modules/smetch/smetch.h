@@ -95,6 +95,7 @@ public:
 
   void seed_random_number_generator(int seed);
 	void background(float value1, float value2, float value3);
+  void redraw_background();
 	void color_mode(int mode, float value1, float value2, float value3, float value4);
 	void create_canvas(double x, double y);
 	void create(double x, double y);
@@ -175,7 +176,6 @@ private:
 	RandomNumberGenerator *random_number_generator;
 	FileDialog *file_dialog = nullptr;
 
-  bool draw_background = false;
   int draw_background_draw_times = 5;
   int draw_background_draw_count = 0;
 

@@ -16,6 +16,7 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("fill", "value1", "value2", "value3", "value4"), &Smetch::fill, DEFVAL(1), DEFVAL(1), DEFVAL(1), DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("background", "value1", "value2", "value3"), &Smetch::background, DEFVAL(1), DEFVAL(-1), DEFVAL(-1));
 
+	ClassDB::bind_method(D_METHOD("redraw_background"), &Smetch::redraw_background);
 	ClassDB::bind_method(D_METHOD("create_canvas"), &Smetch::create_canvas);
 	ClassDB::bind_method(D_METHOD("create"), &Smetch::create);
 	ClassDB::bind_method(D_METHOD("resize_canvas"), &Smetch::resize_canvas);
@@ -112,6 +113,10 @@ Color Smetch::apply_color(float value1, float value2, float value3, float value4
 
 Color Smetch::prime_color(Color color, float value1, float value2, float value3, float value4) {
 	return apply_color(value1, value2, value3, value4, color);
+}
+
+void Smetch::redraw_background() {
+  draw_background_draw_count = 0;
 }
 
 void Smetch::background(float value1, float value2, float value3) {
