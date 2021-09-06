@@ -34,7 +34,10 @@ public:
 		CENTER,
 		CURSOR_HIDDEN,
 		CURSOR_VISIBLE,
-		GIMP
+		GIMP,
+    SQUARE,
+    ROUND,
+    PROJECT
 	};
 
 	enum PaletteSortMode {
@@ -93,7 +96,7 @@ public:
 	void set_properties(const Ref<SmetchProperties> &properties);
 	Ref<SmetchProperties> get_properties() const;
 
-  void seed_random_number_generator(int seed);
+  void seed_random_number_generator(int seed, bool randomize);
 	void background(float value1, float value2, float value3);
   void redraw_background();
 	void color_mode(int mode, float value1, float value2, float value3, float value4);
@@ -109,8 +112,10 @@ public:
 	void stroke(Color c);
 	void translate(float x, float y);
 	void translate_reset();
-	void stroke_color(Color color);
+	void stroke_color_clr(Color color);
+	void stroke_color(float value1, float value2, float value3, float value4);
 	void stroke_weight(float weight);
+	void stroke_cap(int stroke_cap);
 	void gradient_rect(float x, float y, float w, float h, Color c1, Color c2);
 	void no_cursor();
 	void no_stroke();
@@ -172,6 +177,8 @@ private:
   Vector2 translation = Vector2(0.0,0.0);
   float stroke_wgt = 1;
   Color stroke_clr = Color(0,0,0);
+  int stroke_cp = SQUARE;
+
 	CanvasTexture *canvas_texture;
 	RandomNumberGenerator *random_number_generator;
 	FileDialog *file_dialog = nullptr;

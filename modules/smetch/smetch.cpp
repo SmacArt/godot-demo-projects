@@ -15,6 +15,7 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("prime_color", "value1", "value2", "value3", "value4"), &Smetch::prime_color, DEFVAL(Color()), DEFVAL(1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("fill", "value1", "value2", "value3", "value4"), &Smetch::fill, DEFVAL(1), DEFVAL(1), DEFVAL(1), DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("background", "value1", "value2", "value3"), &Smetch::background, DEFVAL(1), DEFVAL(-1), DEFVAL(-1));
+	ClassDB::bind_method(D_METHOD("stroke_color", "value1", "value2", "value3", "value4"), &Smetch::stroke_color, DEFVAL(1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
 
 	ClassDB::bind_method(D_METHOD("redraw_background"), &Smetch::redraw_background);
 	ClassDB::bind_method(D_METHOD("create_canvas"), &Smetch::create_canvas);
@@ -31,7 +32,9 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("pop"), &Smetch::pop);
 	ClassDB::bind_method(D_METHOD("translate_reset"), &Smetch::translate_reset);
 	ClassDB::bind_method(D_METHOD("stroke_weight"), &Smetch::stroke_weight);
+	ClassDB::bind_method(D_METHOD("stroke_cap"), &Smetch::stroke_cap);
 	ClassDB::bind_method(D_METHOD("stroke_color"), &Smetch::stroke_color);
+	ClassDB::bind_method(D_METHOD("stroke_color_clr"), &Smetch::stroke_color_clr);
 	ClassDB::bind_method(D_METHOD("gradient_rect"), &Smetch::gradient_rect);
 
 	ClassDB::bind_method(D_METHOD("no_cursor"), &Smetch::no_cursor);
@@ -73,6 +76,9 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("RADIUS"), RADIUS);
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("CENTER"), CENTER);
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("GIMP"), GIMP);
+	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("SQUARE"), SQUARE);
+	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("ROUND"), ROUND);
+	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("Constants"), StringName("PROJECT"), PROJECT);
 
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("PaletteSortMode"), StringName("RED"), RED);
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("PaletteSortMode"), StringName("GREEN"), GREEN);
@@ -116,7 +122,7 @@ Color Smetch::prime_color(Color color, float value1, float value2, float value3,
 }
 
 void Smetch::redraw_background() {
-  draw_background_draw_count = 0;
+	draw_background_draw_count = 0;
 }
 
 void Smetch::background(float value1, float value2, float value3) {
@@ -144,7 +150,6 @@ void Smetch::fill(float value1, float value2, float value3, float value4) {
 	if (value3 == -1) {
 		value3 = value1;
 	}
-	background_color = apply_color(value1, value2, value3, -1, background_color);
 	fill_color = apply_color(value1, value2, value3, value4, fill_color);
 }
 
@@ -196,7 +201,30 @@ void Smetch::rect(float x, float y, float w, float h) {
 }
 
 void Smetch::line(float start_x, float start_y, float end_x, float end_y) {
-	draw_line(Vector2(translation.x + start_x, translation.y + start_y), Vector2(translation.x + end_x, translation.y + end_y), stroke_clr, stroke_wgt);
+	if (stroke_cp == SQUARE) {
+		draw_line(Vector2(translation.x + start_x, translation.y + start_y), Vector2(translation.x + end_x, translation.y + end_y), stroke_clr, stroke_wgt);
+	} else if (stroke_cp == ROUND) {
+		draw_line(Vector2(translation.x + start_x, translation.y + start_y), Vector2(translation.x + end_x, translation.y + end_y), stroke_clr, stroke_wgt);
+		draw_circle(Vector2(start_x, start_y), fmax(stroke_wgt / 2.0, 0.0), stroke_clr);
+		draw_circle(Vector2(end_x, end_y), fmax(stroke_wgt / 2.0, 0.0), stroke_clr);
+	} else if (stroke_cp == PROJECT) {
+		start_x += translation.x;
+		start_y += translation.y;
+		end_x += translation.x;
+		end_y += translation.y;
+    float project = stroke_wgt * 0.5;
+		float len_line = sqrt(pow(start_x - end_x, 2.0) + pow(start_y - end_y, 2.0));
+    float unit_len_x = (end_x - start_x) / len_line;
+    float unit_len_y = (end_y - start_y) / len_line;
+		Vector2 new_start = Vector2(start_x - project * unit_len_x, start_y - project * unit_len_y);
+		Vector2 new_end = Vector2(end_x + project * unit_len_x, end_y + project * unit_len_y);
+    /*
+		new_end.x = end_x + ((end_x - start_x) / len_line) * project;
+		new_end.y = end_y + ((end_y - start_y) / len_line) * project;
+    */
+    print_line("line_len:" + rtos(len_line) + " end_x:" + rtos(end_x) + " end_y:" + rtos(end_y) + " new end_x:" + rtos(new_end.x) + " new end_y:" + rtos(new_end.y));
+		draw_line(new_start, new_end, stroke_clr, stroke_wgt);
+	}
 }
 
 void Smetch::translate(float x, float y) {
@@ -207,12 +235,29 @@ void Smetch::translate_reset() {
 	translation = Vector2(0, 0);
 }
 
-void Smetch::stroke_color(Color color) {
+void Smetch::stroke_color_clr(Color color) {
 	stroke_clr = color;
+}
+
+void Smetch::stroke_color(float value1, float value2, float value3, float value4) {
+	if (value2 == -1) {
+		value2 = value1;
+	}
+	if (value3 == -1) {
+		value3 = value1;
+	}
+	if (value4 == -1) {
+		value4 = stroke_clr.a;
+	}
+	stroke_clr = apply_color(value1, value2, value3, value4, stroke_clr);
 }
 
 void Smetch::stroke_weight(float weight) {
 	stroke_wgt = weight;
+}
+
+void Smetch::stroke_cap(int stroke_cap) {
+	stroke_cp = stroke_cap;
 }
 
 void Smetch::color_mode(int mode, float value1, float value2, float value3, float value4) {
@@ -267,7 +312,7 @@ void Smetch::pop() {
 }
 
 void Smetch::push() {
-  // NOTE : the push and pop wasnt used so this might not work
+	// NOTE : the push and pop wasnt used so this might not work
 	if (buffer_image_is_available) {
 		Ref<ImageTexture> texture(memnew(ImageTexture));
 		texture->create_from_image(buffer_image);
@@ -359,9 +404,11 @@ void Smetch::mouse_exited() {
 	Input::get_singleton()->set_mouse_mode(parent_mouse_mode);
 }
 
-void Smetch::seed_random_number_generator(int seed) {
+void Smetch::seed_random_number_generator(int seed, bool randomize) {
 	random_number_generator->set_seed(seed);
-	random_number_generator->randomize();
+	if (randomize) {
+		random_number_generator->randomize();
+	}
 }
 
 void Smetch::_ready() {
@@ -370,12 +417,19 @@ void Smetch::_ready() {
 
 	random_number_generator = memnew(RandomNumberGenerator);
 	int seed = OS::get_singleton()->get_unix_time();
+	bool seeded = false;
 	if (properties != nullptr) {
 		if (properties->get_random_seed() > 0) {
+			print_line("Using random seed: " + itos(properties->get_random_seed()));
 			seed = properties->get_random_seed();
+			seed_random_number_generator(seed, false);
+			seeded = true;
+		}
+		if (!seeded) {
+			print_line("Seeding and Randomizing 0");
+			seed_random_number_generator(0, true);
 		}
 	}
-	seed_random_number_generator(seed);
 }
 
 void Smetch::_process(float delta) {
