@@ -104,8 +104,10 @@ public:
 	void create(double x, double y);
 	void resize_canvas(double x, double y);
 	void resize(double x, double y);
+  void clear();
 	void fill(float value1, float value2, float value3, float value4);
 	Color prime_color(Color color, float value1, float value2, float value3, float value4);
+	Color set_color_alpha(Color color, float alpha);
 	void fill_with_color(Color color);
 	void rect(float x, float y, float w, float h);
 	void line(float start_x, float start_y, float end_x, float end_y);

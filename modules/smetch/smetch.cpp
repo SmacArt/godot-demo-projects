@@ -17,9 +17,11 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("background", "value1", "value2", "value3"), &Smetch::background, DEFVAL(1), DEFVAL(-1), DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("stroke_color", "value1", "value2", "value3", "value4"), &Smetch::stroke_color, DEFVAL(1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
 
+	ClassDB::bind_method(D_METHOD("set_color_alpha"), &Smetch::set_color_alpha);
 	ClassDB::bind_method(D_METHOD("redraw_background"), &Smetch::redraw_background);
 	ClassDB::bind_method(D_METHOD("create_canvas"), &Smetch::create_canvas);
 	ClassDB::bind_method(D_METHOD("create"), &Smetch::create);
+	ClassDB::bind_method(D_METHOD("clear"), &Smetch::clear);
 	ClassDB::bind_method(D_METHOD("resize_canvas"), &Smetch::resize_canvas);
 	ClassDB::bind_method(D_METHOD("resize"), &Smetch::resize);
 	ClassDB::bind_method(D_METHOD("continuous_drawing"), &Smetch::continuous_drawing);
@@ -121,6 +123,11 @@ Color Smetch::prime_color(Color color, float value1, float value2, float value3,
 	return apply_color(value1, value2, value3, value4, color);
 }
 
+Color Smetch::set_color_alpha(Color color, float alpha) {
+  color.a = alpha / maxes[3];
+  return color;
+}
+
 void Smetch::redraw_background() {
 	draw_background_draw_count = 0;
 }
@@ -218,11 +225,6 @@ void Smetch::line(float start_x, float start_y, float end_x, float end_y) {
     float unit_len_y = (end_y - start_y) / len_line;
 		Vector2 new_start = Vector2(start_x - project * unit_len_x, start_y - project * unit_len_y);
 		Vector2 new_end = Vector2(end_x + project * unit_len_x, end_y + project * unit_len_y);
-    /*
-		new_end.x = end_x + ((end_x - start_x) / len_line) * project;
-		new_end.y = end_y + ((end_y - start_y) / len_line) * project;
-    */
-    print_line("line_len:" + rtos(len_line) + " end_x:" + rtos(end_x) + " end_y:" + rtos(end_y) + " new end_x:" + rtos(new_end.x) + " new end_y:" + rtos(new_end.y));
 		draw_line(new_start, new_end, stroke_clr, stroke_wgt);
 	}
 }
@@ -283,7 +285,7 @@ void Smetch::color_mode(int mode, float value1, float value2, float value3, floa
 			maxes[0] = value1; // Red
 			maxes[1] = value2; // Green
 			maxes[2] = value3; // Blue
-			maxes[3] = value1; // Alpha
+			maxes[3] = value4; // Alpha
 		}
 	}
 }
@@ -332,6 +334,15 @@ void Smetch::create(double x, double y) {
 	resize(x, y);
 	parent_mouse_mode = Input::get_singleton()->get_mouse_mode();
 	color_mode(RGB, -1, -1, -1, -1);
+}
+
+void Smetch::clear() {
+  if (clr_mode == RGB) {
+    background(maxes[0],maxes[1],maxes[2]);
+  }
+  else if (clr_mode == HSB) {
+    background(0,0,maxes[2]);
+  }
 }
 
 void Smetch::resize_canvas(double x, double y) {
