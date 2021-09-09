@@ -8,6 +8,7 @@
 void register_smetch_types() {
 	GDREGISTER_CLASS(Smetch);
 	GDREGISTER_CLASS(SmetchProperties);
+	GDREGISTER_CLASS(SmetchSectionProperties);
 }
 
 void unregister_smetch_types() {

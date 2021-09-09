@@ -1,8 +1,11 @@
 /* smetch_properties.cpp */
 
 #include "smetch_properties.h"
+#include "smetch_section_properties.h"
 
 void SmetchProperties::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_section", "SmetchSectionProperties"), &SmetchProperties::set_section);
+	ClassDB::bind_method(D_METHOD("get_section"), &SmetchProperties::get_section);
 	ClassDB::bind_method(D_METHOD("get_identifier"), &SmetchProperties::get_identifier);
 	ClassDB::bind_method(D_METHOD("set_identifier", "identifier"), &SmetchProperties::set_identifier);
 	ClassDB::bind_method(D_METHOD("get_title"), &SmetchProperties::get_title);
@@ -13,10 +16,18 @@ void SmetchProperties::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_random_seed"), &SmetchProperties::get_random_seed);
 	ClassDB::bind_method(D_METHOD("set_random_seed", "random_seed"), &SmetchProperties::set_random_seed);
 
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "section", PROPERTY_HINT_RESOURCE_TYPE, "SmetchSectionProperties"), "set_section", "get_section");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "identifier"), "set_identifier", "get_identifier");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "title"), "set_title", "get_title");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "description"), "set_description", "get_description");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "random_seed"), "set_random_seed", "get_random_seed");
+}
+
+Ref<SmetchSectionProperties> SmetchProperties::get_section() {
+  return section;
+}
+void SmetchProperties::set_section(const Ref<SmetchSectionProperties> &p_section) {
+	section = p_section;
 }
 
 String SmetchProperties::get_identifier() {

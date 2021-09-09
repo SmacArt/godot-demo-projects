@@ -4,11 +4,13 @@
 #define SMETCH_PROPERTIES_H
 
 #include "core/io/resource.h"
+#include "smetch_section_properties.h"
 
 class SmetchProperties : public Resource {
 	GDCLASS(SmetchProperties, Resource);
 
 private:
+  Ref<SmetchSectionProperties> section;
   String identifier;
   String title;
   String description;
@@ -18,6 +20,8 @@ protected:
 	static void _bind_methods();
 
 public:
+  Ref<SmetchSectionProperties> get_section();
+  void set_section(const Ref<SmetchSectionProperties> &section);
   String get_title();
   void set_title(String title);
   String get_identifier();
