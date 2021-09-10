@@ -111,11 +111,10 @@ public:
 	void fill_with_color(Color color);
 	void rect(float x, float y, float w, float h);
 	void line(float start_x, float start_y, float end_x, float end_y);
-	void stroke(Color c);
+	void stroke_color(Color c);
+	void stroke(float value1, float value2, float value3, float value4);
 	void translate(float x, float y);
 	void translate_reset();
-	void stroke_color_clr(Color color);
-	void stroke_color(float value1, float value2, float value3, float value4);
 	void stroke_weight(float weight);
 	void stroke_cap(int stroke_cap);
 	void gradient_rect(float x, float y, float w, float h, Color c1, Color c2);

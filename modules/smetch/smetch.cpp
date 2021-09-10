@@ -15,7 +15,7 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("prime_color", "value1", "value2", "value3", "value4"), &Smetch::prime_color, DEFVAL(Color()), DEFVAL(1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("fill", "value1", "value2", "value3", "value4"), &Smetch::fill, DEFVAL(1), DEFVAL(1), DEFVAL(1), DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("background", "value1", "value2", "value3"), &Smetch::background, DEFVAL(1), DEFVAL(-1), DEFVAL(-1));
-	ClassDB::bind_method(D_METHOD("stroke_color", "value1", "value2", "value3", "value4"), &Smetch::stroke_color, DEFVAL(1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
+	ClassDB::bind_method(D_METHOD("stroke", "value1", "value2", "value3", "value4"), &Smetch::stroke, DEFVAL(1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
 
 	ClassDB::bind_method(D_METHOD("set_color_alpha"), &Smetch::set_color_alpha);
 	ClassDB::bind_method(D_METHOD("redraw_background"), &Smetch::redraw_background);
@@ -36,7 +36,6 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("stroke_weight"), &Smetch::stroke_weight);
 	ClassDB::bind_method(D_METHOD("stroke_cap"), &Smetch::stroke_cap);
 	ClassDB::bind_method(D_METHOD("stroke_color"), &Smetch::stroke_color);
-	ClassDB::bind_method(D_METHOD("stroke_color_clr"), &Smetch::stroke_color_clr);
 	ClassDB::bind_method(D_METHOD("gradient_rect"), &Smetch::gradient_rect);
 
 	ClassDB::bind_method(D_METHOD("no_cursor"), &Smetch::no_cursor);
@@ -237,11 +236,11 @@ void Smetch::translate_reset() {
 	translation = Vector2(0, 0);
 }
 
-void Smetch::stroke_color_clr(Color color) {
+void Smetch::stroke_color(Color color) {
 	stroke_clr = color;
 }
 
-void Smetch::stroke_color(float value1, float value2, float value3, float value4) {
+void Smetch::stroke(float value1, float value2, float value3, float value4) {
 	if (value2 == -1) {
 		value2 = value1;
 	}
