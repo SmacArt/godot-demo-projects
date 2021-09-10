@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  register_types.cpp                                                   */
+/*  resource_importer_ogg_vorbis.h                                       */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,25 +28,35 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "register_types.h"
+#ifndef RESOURCE_IMPORTER_OGG_VORBIS_H
+#define RESOURCE_IMPORTER_OGG_VORBIS_H
 
-#include "audio_stream_ogg_vorbis.h"
+#include "core/io/resource_importer.h"
 
-#ifdef TOOLS_ENABLED
-#include "core/config/engine.h"
-#include "resource_importer_ogg_vorbis.h"
-#endif
+class ResourceImporterOGGVorbis : public ResourceImporter {
+	GDCLASS(ResourceImporterOGGVorbis, ResourceImporter);
 
-void register_stb_vorbis_types() {
-#ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		Ref<ResourceImporterOGGVorbis> ogg_import;
-		ogg_import.instantiate();
-		ResourceFormatImporter::get_singleton()->add_importer(ogg_import);
-	}
-#endif
-	GDREGISTER_CLASS(AudioStreamOGGVorbis);
-}
+	enum {
+		OGG_SYNC_BUFFER_SIZE = 8192,
+	};
 
-void unregister_stb_vorbis_types() {
-}
+private:
+	// virtual int get_samples_in_packet(Vector<uint8_t> p_packet) = 0;
+
+public:
+	virtual void get_recognized_extensions(List<String> *p_extensions) const override;
+	virtual String get_save_extension() const override;
+	virtual String get_resource_type() const override;
+	virtual String get_importer_name() const override;
+	virtual String get_visible_name() const override;
+	virtual int get_preset_count() const override;
+	virtual String get_preset_name(int p_idx) const override;
+	virtual void get_import_options(List<ImportOption> *r_options, int p_preset = 0) const override;
+	virtual bool get_option_visibility(const String &p_option, const Map<StringName, Variant> &p_options) const override;
+
+	virtual Error import(const String &p_source_file, const String &p_save_path, const Map<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files = nullptr, Variant *r_metadata = nullptr) override;
+
+	ResourceImporterOGGVorbis();
+};
+
+#endif // RESOURCE_IMPORTER_OGG_VORBIS_H

@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  resource_importer_ogg_vorbis.h                                       */
+/*  multiplayer.h                                                        */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,31 +28,53 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef RESOURCEIMPORTEROGGVORBIS_H
-#define RESOURCEIMPORTEROGGVORBIS_H
+#ifndef MULTIPLAYER_H
+#define MULTIPLAYER_H
 
-#include "audio_stream_ogg_vorbis.h"
-#include "core/io/resource_importer.h"
+#include "core/variant/binder_common.h"
 
-class ResourceImporterOGGVorbis : public ResourceImporter {
-	GDCLASS(ResourceImporterOGGVorbis, ResourceImporter);
+#include "core/string/string_name.h"
 
-public:
-	virtual String get_importer_name() const override;
-	virtual String get_visible_name() const override;
-	virtual void get_recognized_extensions(List<String> *p_extensions) const override;
-	virtual String get_save_extension() const override;
-	virtual String get_resource_type() const override;
+namespace Multiplayer {
 
-	virtual int get_preset_count() const override;
-	virtual String get_preset_name(int p_idx) const override;
-
-	virtual void get_import_options(List<ImportOption> *r_options, int p_preset = 0) const override;
-	virtual bool get_option_visibility(const String &p_option, const Map<StringName, Variant> &p_options) const override;
-
-	virtual Error import(const String &p_source_file, const String &p_save_path, const Map<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files = nullptr, Variant *r_metadata = nullptr) override;
-
-	ResourceImporterOGGVorbis();
+enum TransferMode {
+	TRANSFER_MODE_UNRELIABLE,
+	TRANSFER_MODE_ORDERED,
+	TRANSFER_MODE_RELIABLE
 };
 
-#endif // RESOURCEIMPORTEROGGVORBIS_H
+enum RPCMode {
+	RPC_MODE_DISABLED, // No rpc for this method, calls to this will be blocked (default)
+	RPC_MODE_ANY, // Any peer can call this RPC
+	RPC_MODE_AUTHORITY, // / Only the node's multiplayer authority (server by default) can call this RPC
+};
+
+struct RPCConfig {
+	StringName name;
+	RPCMode rpc_mode = RPC_MODE_DISABLED;
+	bool sync = false;
+	TransferMode transfer_mode = TRANSFER_MODE_RELIABLE;
+	int channel = 0;
+
+	bool operator==(RPCConfig const &p_other) const {
+		return name == p_other.name;
+	}
+};
+
+struct SortRPCConfig {
+	StringName::AlphCompare compare;
+	bool operator()(const RPCConfig &p_a, const RPCConfig &p_b) const {
+		return compare(p_a.name, p_b.name);
+	}
+};
+
+}; // namespace Multiplayer
+
+// This is needed for proper docs generation (i.e. not "Multiplayer."-prefixed).
+typedef Multiplayer::RPCMode RPCMode;
+typedef Multiplayer::TransferMode TransferMode;
+
+VARIANT_ENUM_CAST(RPCMode);
+VARIANT_ENUM_CAST(TransferMode);
+
+#endif // MULTIPLAYER_H

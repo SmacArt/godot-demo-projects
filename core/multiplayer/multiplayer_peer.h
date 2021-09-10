@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  register_types.h                                                     */
+/*  multiplayer_peer.h                                                   */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,10 +28,53 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef STB_VORBIS_REGISTER_TYPES_H
-#define STB_VORBIS_REGISTER_TYPES_H
+#ifndef NETWORKED_MULTIPLAYER_PEER_H
+#define NETWORKED_MULTIPLAYER_PEER_H
 
-void register_stb_vorbis_types();
-void unregister_stb_vorbis_types();
+#include "core/io/packet_peer.h"
+#include "core/multiplayer/multiplayer.h"
 
-#endif // STB_VORBIS_REGISTER_TYPES_H
+class MultiplayerPeer : public PacketPeer {
+	GDCLASS(MultiplayerPeer, PacketPeer);
+
+protected:
+	static void _bind_methods();
+
+public:
+	enum {
+		TARGET_PEER_BROADCAST = 0,
+		TARGET_PEER_SERVER = 1
+	};
+
+	enum ConnectionStatus {
+		CONNECTION_DISCONNECTED,
+		CONNECTION_CONNECTING,
+		CONNECTION_CONNECTED,
+	};
+
+	virtual void set_transfer_channel(int p_channel) = 0;
+	virtual int get_transfer_channel() const = 0;
+	virtual void set_transfer_mode(Multiplayer::TransferMode p_mode) = 0;
+	virtual Multiplayer::TransferMode get_transfer_mode() const = 0;
+	virtual void set_target_peer(int p_peer_id) = 0;
+
+	virtual int get_packet_peer() const = 0;
+
+	virtual bool is_server() const = 0;
+
+	virtual void poll() = 0;
+
+	virtual int get_unique_id() const = 0;
+
+	virtual void set_refuse_new_connections(bool p_enable) = 0;
+	virtual bool is_refusing_new_connections() const = 0;
+
+	virtual ConnectionStatus get_connection_status() const = 0;
+	uint32_t generate_unique_id() const;
+
+	MultiplayerPeer() {}
+};
+
+VARIANT_ENUM_CAST(MultiplayerPeer::ConnectionStatus)
+
+#endif // NETWORKED_MULTIPLAYER_PEER_H

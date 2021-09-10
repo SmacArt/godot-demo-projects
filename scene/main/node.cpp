@@ -123,28 +123,27 @@ void Node::_notification(int p_notification) {
 			}
 		} break;
 		case NOTIFICATION_READY: {
-			if (get_script_instance()) {
-				if (GDVIRTUAL_IS_OVERRIDDEN(_input)) {
-					set_process_input(true);
-				}
-
-				if (GDVIRTUAL_IS_OVERRIDDEN(_unhandled_input)) {
-					set_process_unhandled_input(true);
-				}
-
-				if (GDVIRTUAL_IS_OVERRIDDEN(_unhandled_key_input)) {
-					set_process_unhandled_key_input(true);
-				}
-
-				if (GDVIRTUAL_IS_OVERRIDDEN(_process)) {
-					set_process(true);
-				}
-				if (GDVIRTUAL_IS_OVERRIDDEN(_physics_process)) {
-					set_physics_process(true);
-				}
-
-				GDVIRTUAL_CALL(_ready);
+			if (GDVIRTUAL_IS_OVERRIDDEN(_input)) {
+				set_process_input(true);
 			}
+
+			if (GDVIRTUAL_IS_OVERRIDDEN(_unhandled_input)) {
+				set_process_unhandled_input(true);
+			}
+
+			if (GDVIRTUAL_IS_OVERRIDDEN(_unhandled_key_input)) {
+				set_process_unhandled_key_input(true);
+			}
+
+			if (GDVIRTUAL_IS_OVERRIDDEN(_process)) {
+				set_process(true);
+			}
+			if (GDVIRTUAL_IS_OVERRIDDEN(_physics_process)) {
+				set_physics_process(true);
+			}
+
+			GDVIRTUAL_CALL(_ready);
+
 			if (data.filename.length()) {
 				ERR_FAIL_COND(!is_inside_tree());
 				get_multiplayer()->scene_enter_exit_notify(data.filename, this, true);
@@ -517,32 +516,32 @@ void Node::_propagate_process_owner(Node *p_owner, int p_pause_notification, int
 	}
 }
 
-void Node::set_network_authority(int p_peer_id, bool p_recursive) {
-	data.network_authority = p_peer_id;
+void Node::set_multiplayer_authority(int p_peer_id, bool p_recursive) {
+	data.multiplayer_authority = p_peer_id;
 
 	if (p_recursive) {
 		for (int i = 0; i < data.children.size(); i++) {
-			data.children[i]->set_network_authority(p_peer_id, true);
+			data.children[i]->set_multiplayer_authority(p_peer_id, true);
 		}
 	}
 }
 
-int Node::get_network_authority() const {
-	return data.network_authority;
+int Node::get_multiplayer_authority() const {
+	return data.multiplayer_authority;
 }
 
-bool Node::is_network_authority() const {
+bool Node::is_multiplayer_authority() const {
 	ERR_FAIL_COND_V(!is_inside_tree(), false);
 
-	return get_multiplayer()->get_network_unique_id() == data.network_authority;
+	return get_multiplayer()->get_unique_id() == data.multiplayer_authority;
 }
 
 /***** RPC CONFIG ********/
 
-uint16_t Node::rpc_config(const StringName &p_method, MultiplayerAPI::RPCMode p_rpc_mode, MultiplayerPeer::TransferMode p_transfer_mode, int p_channel) {
+uint16_t Node::rpc_config(const StringName &p_method, Multiplayer::RPCMode p_rpc_mode, Multiplayer::TransferMode p_transfer_mode, int p_channel) {
 	for (int i = 0; i < data.rpc_methods.size(); i++) {
 		if (data.rpc_methods[i].name == p_method) {
-			MultiplayerAPI::RPCConfig &nd = data.rpc_methods.write[i];
+			Multiplayer::RPCConfig &nd = data.rpc_methods.write[i];
 			nd.rpc_mode = p_rpc_mode;
 			nd.transfer_mode = p_transfer_mode;
 			nd.channel = p_channel;
@@ -550,7 +549,7 @@ uint16_t Node::rpc_config(const StringName &p_method, MultiplayerAPI::RPCMode p_
 		}
 	}
 	// New method
-	MultiplayerAPI::RPCConfig nd;
+	Multiplayer::RPCConfig nd;
 	nd.name = p_method;
 	nd.rpc_mode = p_rpc_mode;
 	nd.transfer_mode = p_transfer_mode;
@@ -643,7 +642,7 @@ Variant Node::_rpc_id_bind(const Variant **p_args, int p_argcount, Callable::Cal
 
 void Node::rpcp(int p_peer_id, const StringName &p_method, const Variant **p_arg, int p_argcount) {
 	ERR_FAIL_COND(!is_inside_tree());
-	get_multiplayer()->rpcp(this, p_peer_id, true, p_method, p_arg, p_argcount);
+	get_multiplayer()->rpcp(this, p_peer_id, p_method, p_arg, p_argcount);
 }
 
 Ref<MultiplayerAPI> Node::get_multiplayer() const {
@@ -664,7 +663,7 @@ void Node::set_custom_multiplayer(Ref<MultiplayerAPI> p_multiplayer) {
 	multiplayer = p_multiplayer;
 }
 
-Vector<MultiplayerAPI::RPCConfig> Node::get_node_rpc_methods() const {
+Vector<Multiplayer::RPCConfig> Node::get_node_rpc_methods() const {
 	return data.rpc_methods;
 }
 
@@ -2738,15 +2737,15 @@ void Node::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("request_ready"), &Node::request_ready);
 
-	ClassDB::bind_method(D_METHOD("set_network_authority", "id", "recursive"), &Node::set_network_authority, DEFVAL(true));
-	ClassDB::bind_method(D_METHOD("get_network_authority"), &Node::get_network_authority);
+	ClassDB::bind_method(D_METHOD("set_multiplayer_authority", "id", "recursive"), &Node::set_multiplayer_authority, DEFVAL(true));
+	ClassDB::bind_method(D_METHOD("get_multiplayer_authority"), &Node::get_multiplayer_authority);
 
-	ClassDB::bind_method(D_METHOD("is_network_authority"), &Node::is_network_authority);
+	ClassDB::bind_method(D_METHOD("is_multiplayer_authority"), &Node::is_multiplayer_authority);
 
 	ClassDB::bind_method(D_METHOD("get_multiplayer"), &Node::get_multiplayer);
 	ClassDB::bind_method(D_METHOD("get_custom_multiplayer"), &Node::get_custom_multiplayer);
 	ClassDB::bind_method(D_METHOD("set_custom_multiplayer", "api"), &Node::set_custom_multiplayer);
-	ClassDB::bind_method(D_METHOD("rpc_config", "method", "rpc_mode", "transfer_mode", "channel"), &Node::rpc_config, DEFVAL(MultiplayerPeer::TRANSFER_MODE_RELIABLE), DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("rpc_config", "method", "rpc_mode", "transfer_mode", "channel"), &Node::rpc_config, DEFVAL(Multiplayer::TRANSFER_MODE_RELIABLE), DEFVAL(0));
 
 	ClassDB::bind_method(D_METHOD("set_editor_description", "editor_description"), &Node::set_editor_description);
 	ClassDB::bind_method(D_METHOD("get_editor_description"), &Node::get_editor_description);

@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  audio_stream_ogg_vorbis.h                                            */
+/*  listener_2d.h                                                        */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,85 +28,34 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef AUDIO_STREAM_STB_VORBIS_H
-#define AUDIO_STREAM_STB_VORBIS_H
+#ifndef LISTENER_2D_H
+#define LISTENER_2D_H
 
-#include "core/io/resource_loader.h"
-#include "servers/audio/audio_stream.h"
+#include "scene/2d/node_2d.h"
+#include "scene/main/window.h"
 
-#include "thirdparty/misc/stb_vorbis.h"
+class Listener2D : public Node2D {
+	GDCLASS(Listener2D, Node2D);
 
-class AudioStreamOGGVorbis;
+private:
+	bool current = false;
 
-class AudioStreamPlaybackOGGVorbis : public AudioStreamPlaybackResampled {
-	GDCLASS(AudioStreamPlaybackOGGVorbis, AudioStreamPlaybackResampled);
-
-	stb_vorbis *ogg_stream = nullptr;
-	stb_vorbis_alloc ogg_alloc;
-	uint32_t frames_mixed = 0;
-	bool active = false;
-	int loops = 0;
-
-	friend class AudioStreamOGGVorbis;
-
-	Ref<AudioStreamOGGVorbis> vorbis_stream;
+	friend class Viewport;
 
 protected:
-	virtual int _mix_internal(AudioFrame *p_buffer, int p_frames) override;
-	virtual float get_stream_sampling_rate() override;
+	void _update_listener();
 
-public:
-	virtual void start(float p_from_pos = 0.0) override;
-	virtual void stop() override;
-	virtual bool is_playing() const override;
+	bool _set(const StringName &p_name, const Variant &p_value);
+	bool _get(const StringName &p_name, Variant &r_ret) const;
+	void _get_property_list(List<PropertyInfo> *p_list) const;
+	void _notification(int p_what);
 
-	virtual int get_loop_count() const override; //times it looped
-
-	virtual float get_playback_position() const override;
-	virtual void seek(float p_time) override;
-
-	AudioStreamPlaybackOGGVorbis() {}
-	~AudioStreamPlaybackOGGVorbis();
-};
-
-class AudioStreamOGGVorbis : public AudioStream {
-	GDCLASS(AudioStreamOGGVorbis, AudioStream);
-	OBJ_SAVE_TYPE(AudioStream); // Saves derived classes with common type so they can be interchanged.
-	RES_BASE_EXTENSION("oggstr");
-
-	friend class AudioStreamPlaybackOGGVorbis;
-
-	void *data = nullptr;
-	uint32_t data_len = 0;
-
-	int decode_mem_size = 0;
-	float sample_rate = 1.0;
-	int channels = 1;
-	float length = 0.0;
-	bool loop = false;
-	float loop_offset = 0.0;
-	void clear_data();
-
-protected:
 	static void _bind_methods();
 
 public:
-	void set_loop(bool p_enable);
-	bool has_loop() const;
-
-	void set_loop_offset(float p_seconds);
-	float get_loop_offset() const;
-
-	virtual Ref<AudioStreamPlayback> instance_playback() override;
-	virtual String get_stream_name() const override;
-
-	void set_data(const Vector<uint8_t> &p_data);
-	Vector<uint8_t> get_data() const;
-
-	virtual float get_length() const override; //if supported, otherwise return 0
-
-	AudioStreamOGGVorbis();
-	virtual ~AudioStreamOGGVorbis();
+	void make_current();
+	void clear_current();
+	bool is_current() const;
 };
 
 #endif

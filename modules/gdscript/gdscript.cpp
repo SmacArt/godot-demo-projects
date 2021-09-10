@@ -87,6 +87,19 @@ Object *GDScriptNativeClass::instantiate() {
 	return ClassDB::instantiate(name);
 }
 
+GDScriptFunction *GDScript::_super_constructor(GDScript *p_script) {
+	if (p_script->initializer) {
+		return p_script->initializer;
+	} else {
+		GDScript *base = p_script->_base;
+		if (base != nullptr) {
+			return _super_constructor(base);
+		} else {
+			return nullptr;
+		}
+	}
+}
+
 void GDScript::_super_implicit_constructor(GDScript *p_script, GDScriptInstance *p_instance, Callable::CallError &r_error) {
 	GDScript *base = p_script->_base;
 	if (base != nullptr) {
@@ -135,6 +148,8 @@ GDScriptInstance *GDScript::_create_instance(const Variant **p_args, int p_argco
 	if (p_argcount < 0) {
 		return instance;
 	}
+
+	initializer = _super_constructor(this);
 	if (initializer != nullptr) {
 		initializer->call(instance, p_args, p_argcount, r_error);
 		if (r_error.error != Callable::CallError::CALL_OK) {
@@ -900,7 +915,7 @@ void GDScript::get_members(Set<StringName> *p_members) {
 	}
 }
 
-const Vector<MultiplayerAPI::RPCConfig> GDScript::get_rpc_methods() const {
+const Vector<Multiplayer::RPCConfig> GDScript::get_rpc_methods() const {
 	return rpc_functions;
 }
 
@@ -1164,8 +1179,8 @@ void GDScript::_init_rpc_methods_properties() {
 	while (cscript) {
 		// RPC Methods
 		for (Map<StringName, GDScriptFunction *>::Element *E = cscript->member_functions.front(); E; E = E->next()) {
-			MultiplayerAPI::RPCConfig config = E->get()->get_rpc_config();
-			if (config.rpc_mode != MultiplayerAPI::RPC_MODE_DISABLED) {
+			Multiplayer::RPCConfig config = E->get()->get_rpc_config();
+			if (config.rpc_mode != Multiplayer::RPC_MODE_DISABLED) {
 				config.name = E->get()->get_name();
 				if (rpc_functions.find(config) == -1) {
 					rpc_functions.push_back(config);
@@ -1185,7 +1200,7 @@ void GDScript::_init_rpc_methods_properties() {
 	}
 
 	// Sort so we are 100% that they are always the same.
-	rpc_functions.sort_custom<MultiplayerAPI::SortRPCConfig>();
+	rpc_functions.sort_custom<Multiplayer::SortRPCConfig>();
 }
 
 GDScript::~GDScript() {
@@ -1541,7 +1556,7 @@ ScriptLanguage *GDScriptInstance::get_language() {
 	return GDScriptLanguage::get_singleton();
 }
 
-const Vector<MultiplayerAPI::RPCConfig> GDScriptInstance::get_rpc_methods() const {
+const Vector<Multiplayer::RPCConfig> GDScriptInstance::get_rpc_methods() const {
 	return script->get_rpc_methods();
 }
 

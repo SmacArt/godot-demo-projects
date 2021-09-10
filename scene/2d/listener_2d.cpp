@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  multiplayer_peer.h                                                   */
+/*  listener_2d.cpp                                                      */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,58 +28,85 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef NETWORKED_MULTIPLAYER_PEER_H
-#define NETWORKED_MULTIPLAYER_PEER_H
+#include "listener_2d.h"
 
-#include "core/io/packet_peer.h"
+bool Listener2D::_set(const StringName &p_name, const Variant &p_value) {
+	if (p_name == "current") {
+		if (p_value.operator bool()) {
+			make_current();
+		} else {
+			clear_current();
+		}
+	} else {
+		return false;
+	}
+	return true;
+}
 
-class MultiplayerPeer : public PacketPeer {
-	GDCLASS(MultiplayerPeer, PacketPeer);
+bool Listener2D::_get(const StringName &p_name, Variant &r_ret) const {
+	if (p_name == "current") {
+		if (is_inside_tree() && get_tree()->is_node_being_edited(this)) {
+			r_ret = current;
+		} else {
+			r_ret = is_current();
+		}
+	} else {
+		return false;
+	}
+	return true;
+}
 
-protected:
-	static void _bind_methods();
+void Listener2D::_get_property_list(List<PropertyInfo> *p_list) const {
+	p_list->push_back(PropertyInfo(Variant::BOOL, "current"));
+}
 
-public:
-	enum {
-		TARGET_PEER_BROADCAST = 0,
-		TARGET_PEER_SERVER = 1
-	};
-	enum TransferMode {
-		TRANSFER_MODE_UNRELIABLE,
-		TRANSFER_MODE_UNRELIABLE_ORDERED,
-		TRANSFER_MODE_RELIABLE,
-	};
+void Listener2D::_notification(int p_what) {
+	switch (p_what) {
+		case NOTIFICATION_ENTER_TREE: {
+			if (!get_tree()->is_node_being_edited(this) && current) {
+				make_current();
+			}
+		} break;
+		case NOTIFICATION_EXIT_TREE: {
+			if (!get_tree()->is_node_being_edited(this)) {
+				if (is_current()) {
+					clear_current();
+					current = true; // Keep it true.
+				} else {
+					current = false;
+				}
+			}
+		} break;
+	}
+}
 
-	enum ConnectionStatus {
-		CONNECTION_DISCONNECTED,
-		CONNECTION_CONNECTING,
-		CONNECTION_CONNECTED,
-	};
+void Listener2D::make_current() {
+	current = true;
+	if (!is_inside_tree()) {
+		return;
+	}
+	get_viewport()->_listener_2d_set(this);
+}
 
-	virtual void set_transfer_channel(int p_channel) = 0;
-	virtual int get_transfer_channel() const = 0;
-	virtual void set_transfer_mode(TransferMode p_mode) = 0;
-	virtual TransferMode get_transfer_mode() const = 0;
-	virtual void set_target_peer(int p_peer_id) = 0;
+void Listener2D::clear_current() {
+	current = false;
+	if (!is_inside_tree()) {
+		return;
+	}
+	get_viewport()->_listener_2d_remove(this);
+}
 
-	virtual int get_packet_peer() const = 0;
+bool Listener2D::is_current() const {
+	if (is_inside_tree() && !get_tree()->is_node_being_edited(this)) {
+		return get_viewport()->get_listener_2d() == this;
+	} else {
+		return current;
+	}
+	return false;
+}
 
-	virtual bool is_server() const = 0;
-
-	virtual void poll() = 0;
-
-	virtual int get_unique_id() const = 0;
-
-	virtual void set_refuse_new_connections(bool p_enable) = 0;
-	virtual bool is_refusing_new_connections() const = 0;
-
-	virtual ConnectionStatus get_connection_status() const = 0;
-	uint32_t generate_unique_id() const;
-
-	MultiplayerPeer() {}
-};
-
-VARIANT_ENUM_CAST(MultiplayerPeer::TransferMode)
-VARIANT_ENUM_CAST(MultiplayerPeer::ConnectionStatus)
-
-#endif // NETWORKED_MULTIPLAYER_PEER_H
+void Listener2D::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("make_current"), &Listener2D::make_current);
+	ClassDB::bind_method(D_METHOD("clear_current"), &Listener2D::clear_current);
+	ClassDB::bind_method(D_METHOD("is_current"), &Listener2D::is_current);
+}

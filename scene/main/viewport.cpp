@@ -37,6 +37,7 @@
 #include "core/templates/pair.h"
 #include "scene/2d/camera_2d.h"
 #include "scene/2d/collision_object_2d.h"
+#include "scene/2d/listener_2d.cpp"
 #ifndef _3D_DISABLED
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/collision_object_3d.h"
@@ -831,12 +832,15 @@ void Viewport::set_as_audio_listener_2d(bool p_enable) {
 	}
 
 	audio_listener_2d = p_enable;
-
 	_update_listener_2d();
 }
 
 bool Viewport::is_audio_listener_2d() const {
 	return audio_listener_2d;
+}
+
+Listener2D *Viewport::get_listener_2d() const {
+	return listener_2d;
 }
 
 void Viewport::enable_canvas_transform_override(bool p_enable) {
@@ -901,6 +905,21 @@ Transform2D Viewport::get_global_canvas_transform() const {
 
 void Viewport::_camera_2d_set(Camera2D *p_camera_2d) {
 	camera_2d = p_camera_2d;
+}
+
+void Viewport::_listener_2d_set(Listener2D *p_listener) {
+	if (listener_2d == p_listener) {
+		return;
+	} else if (listener_2d) {
+		listener_2d->clear_current();
+	}
+	listener_2d = p_listener;
+}
+
+void Viewport::_listener_2d_remove(Listener2D *p_listener) {
+	if (listener_2d == p_listener) {
+		listener_2d = nullptr;
+	}
 }
 
 void Viewport::_canvas_layer_add(CanvasLayer *p_canvas_layer) {
@@ -1420,13 +1439,6 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 				//do not steal mouse focus and stuff while a focus mask exists
 				gui.mouse_focus_mask |= 1 << (mb->get_button_index() - 1); //add the button to the mask
 			} else {
-				bool is_handled = false;
-
-				if (is_handled) {
-					set_input_as_handled();
-					return;
-				}
-
 				//Matrix32 parent_xform;
 
 				/*
