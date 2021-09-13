@@ -123,8 +123,8 @@ Color Smetch::prime_color(Color color, float value1, float value2, float value3,
 }
 
 Color Smetch::set_color_alpha(Color color, float alpha) {
-  color.a = alpha / maxes[3];
-  return color;
+	color.a = alpha / maxes[3];
+	return color;
 }
 
 void Smetch::redraw_background() {
@@ -218,10 +218,10 @@ void Smetch::line(float start_x, float start_y, float end_x, float end_y) {
 		start_y += translation.y;
 		end_x += translation.x;
 		end_y += translation.y;
-    float project = stroke_wgt * 0.5;
+		float project = stroke_wgt * 0.5;
 		float len_line = sqrt(pow(start_x - end_x, 2.0) + pow(start_y - end_y, 2.0));
-    float unit_len_x = (end_x - start_x) / len_line;
-    float unit_len_y = (end_y - start_y) / len_line;
+		float unit_len_x = (end_x - start_x) / len_line;
+		float unit_len_y = (end_y - start_y) / len_line;
 		Vector2 new_start = Vector2(start_x - project * unit_len_x, start_y - project * unit_len_y);
 		Vector2 new_end = Vector2(end_x + project * unit_len_x, end_y + project * unit_len_y);
 		draw_line(new_start, new_end, stroke_clr, stroke_wgt);
@@ -336,12 +336,11 @@ void Smetch::create(double x, double y) {
 }
 
 void Smetch::clear() {
-  if (clr_mode == RGB) {
-    background(maxes[0],maxes[1],maxes[2]);
-  }
-  else if (clr_mode == HSB) {
-    background(0,0,maxes[2]);
-  }
+	if (clr_mode == RGB) {
+		background(maxes[0], maxes[1], maxes[2]);
+	} else if (clr_mode == HSB) {
+		background(0, 0, maxes[2]);
+	}
 }
 
 void Smetch::resize_canvas(double x, double y) {
@@ -425,7 +424,6 @@ void Smetch::_ready() {
 	connect("mouse_entered", callable_mp(this, &Smetch::mouse_entered));
 	connect("mouse_exited", callable_mp(this, &Smetch::mouse_exited));
 
-	random_number_generator = memnew(RandomNumberGenerator);
 	int seed = OS::get_singleton()->get_unix_time();
 	bool seeded = false;
 	if (properties != nullptr) {
@@ -435,10 +433,10 @@ void Smetch::_ready() {
 			seed_random_number_generator(seed, false);
 			seeded = true;
 		}
-		if (!seeded) {
-			print_line("Seeding and Randomizing 0");
-			seed_random_number_generator(0, true);
-		}
+	}
+	if (!seeded) {
+		print_line("Seeding and Randomizing 0");
+		seed_random_number_generator(0, true);
 	}
 }
 
@@ -567,6 +565,7 @@ void Smetch::_on_FileDialog_file_selected(const String path) {
 }
 
 Smetch::Smetch() {
+	random_number_generator = memnew(RandomNumberGenerator);
 }
 
 Smetch::~Smetch() {

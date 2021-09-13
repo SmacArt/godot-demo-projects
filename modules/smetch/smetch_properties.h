@@ -14,6 +14,7 @@ private:
   String identifier;
   String description;
   int random_seed;
+  String image_file;
 
 protected:
 	static void _bind_methods();
@@ -27,6 +28,8 @@ public:
   void set_description(String title);
   int get_random_seed();
   void set_random_seed(int seed);
+  void set_image_file(String image_file);
+  String get_image_file();
 
 private:
 };
