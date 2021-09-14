@@ -11,6 +11,10 @@ void SmetchSectionProperties::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_title", "title"), &SmetchSectionProperties::set_title);
 	ClassDB::bind_method(D_METHOD("get_description"), &SmetchSectionProperties::get_description);
 	ClassDB::bind_method(D_METHOD("set_description", "description"), &SmetchSectionProperties::set_description);
+
+	ClassDB::bind_method(D_METHOD("get_preview_file"), &SmetchSectionProperties::get_preview_file);
+	ClassDB::bind_method(D_METHOD("set_preview_file", "preview_file"), &SmetchSectionProperties::set_preview_file);
+
 	ClassDB::bind_method(D_METHOD("get_description_rect"), &SmetchSectionProperties::get_description_rect);
 	ClassDB::bind_method(D_METHOD("set_description_rect", "description"), &SmetchSectionProperties::set_description_rect);
 
@@ -19,6 +23,7 @@ void SmetchSectionProperties::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "title"), "set_title", "get_title");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "description"), "set_description", "get_description");
 	ADD_PROPERTY(PropertyInfo(Variant::RECT2, "description_rect"), "set_description_rect", "get_description_rect");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "preview_file", PROPERTY_HINT_FILE, "*.png"), "set_preview_file", "get_preview_file");
 }
 
 Ref<SmetchChapterProperties> SmetchSectionProperties::get_chapter() {
@@ -54,4 +59,11 @@ Rect2 SmetchSectionProperties::get_description_rect() {
 }
 void SmetchSectionProperties::set_description_rect(Rect2 p_description_rect) {
 	description_rect = p_description_rect;
+}
+
+String SmetchSectionProperties::get_preview_file() {
+  return preview_file;
+}
+void SmetchSectionProperties::set_preview_file(String p_preview_file) {
+	preview_file = p_preview_file;
 }

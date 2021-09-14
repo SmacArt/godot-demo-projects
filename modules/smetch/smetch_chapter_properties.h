@@ -12,6 +12,7 @@ private:
   String identifier;
   String title;
   String description;
+  String preview_file;
 
 protected:
 	static void _bind_methods();
@@ -23,6 +24,8 @@ public:
   void set_identifier(String title);
   String get_description();
   void set_description(String title);
+  void set_preview_file(String image_file);
+  String get_preview_file();
 
 private:
 };

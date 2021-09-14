@@ -10,15 +10,15 @@ void SmetchProperties::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_identifier", "identifier"), &SmetchProperties::set_identifier);
 	ClassDB::bind_method(D_METHOD("get_description"), &SmetchProperties::get_description);
 	ClassDB::bind_method(D_METHOD("set_description", "description"), &SmetchProperties::set_description);
-	ClassDB::bind_method(D_METHOD("get_image_file"), &SmetchProperties::get_image_file);
-	ClassDB::bind_method(D_METHOD("set_image_file", "image_file"), &SmetchProperties::set_image_file);
+	ClassDB::bind_method(D_METHOD("get_preview_file"), &SmetchProperties::get_preview_file);
+	ClassDB::bind_method(D_METHOD("set_preview_file", "image_file"), &SmetchProperties::set_preview_file);
 	ClassDB::bind_method(D_METHOD("get_random_seed"), &SmetchProperties::get_random_seed);
 	ClassDB::bind_method(D_METHOD("set_random_seed", "random_seed"), &SmetchProperties::set_random_seed);
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "section", PROPERTY_HINT_RESOURCE_TYPE, "SmetchSectionProperties"), "set_section", "get_section");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "identifier"), "set_identifier", "get_identifier");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "description"), "set_description", "get_description");
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "image_file", PROPERTY_HINT_FILE, "*.png"), "set_image_file", "get_image_file");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "preview_file", PROPERTY_HINT_FILE, "*.png"), "set_preview_file", "get_preview_file");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "random_seed"), "set_random_seed", "get_random_seed");
 }
 
@@ -50,9 +50,9 @@ void SmetchProperties::set_random_seed(int p_random_seed) {
 	random_seed = p_random_seed;
 }
 
-String SmetchProperties::get_image_file() {
-  return image_file;
+String SmetchProperties::get_preview_file() {
+  return preview_file;
 }
-void SmetchProperties::set_image_file(String p_image_file) {
-	image_file = p_image_file;
+void SmetchProperties::set_preview_file(String p_preview_file) {
+	preview_file = p_preview_file;
 }

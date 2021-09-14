@@ -14,6 +14,7 @@ private:
 	String identifier;
 	String title;
 	String description;
+  String preview_file;
 	Rect2 description_rect;
 
 protected:
@@ -30,6 +31,8 @@ public:
 	void set_description(String title);
 	Rect2 get_description_rect();
 	void set_description_rect(Rect2 seed);
+  String get_preview_file();
+  void set_preview_file(String preview_file);
 
 private:
 };
