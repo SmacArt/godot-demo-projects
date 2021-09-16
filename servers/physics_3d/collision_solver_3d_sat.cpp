@@ -66,11 +66,11 @@
 
 struct _CollectorCallback {
 	CollisionSolver3DSW::CallbackResult callback;
-	void *userdata;
-	bool swap;
-	bool collided;
+	void *userdata = nullptr;
+	bool swap = false;
+	bool collided = false;
 	Vector3 normal;
-	Vector3 *prev_axis;
+	Vector3 *prev_axis = nullptr;
 
 	_FORCE_INLINE_ void call(const Vector3 &p_point_A, const Vector3 &p_point_B) {
 		if (swap) {
@@ -606,15 +606,15 @@ static void _generate_contacts_from_supports(const Vector3 *p_points_A, int p_po
 
 template <class ShapeA, class ShapeB, bool withMargin = false>
 class SeparatorAxisTest {
-	const ShapeA *shape_A;
-	const ShapeB *shape_B;
-	const Transform3D *transform_A;
-	const Transform3D *transform_B;
-	real_t best_depth;
+	const ShapeA *shape_A = nullptr;
+	const ShapeB *shape_B = nullptr;
+	const Transform3D *transform_A = nullptr;
+	const Transform3D *transform_B = nullptr;
+	real_t best_depth = 1e15;
 	Vector3 best_axis;
-	_CollectorCallback *callback;
-	real_t margin_A;
-	real_t margin_B;
+	_CollectorCallback *callback = nullptr;
+	real_t margin_A = 0.0;
+	real_t margin_B = 0.0;
 	Vector3 separator_axis;
 
 public:
@@ -749,7 +749,6 @@ public:
 	}
 
 	_FORCE_INLINE_ SeparatorAxisTest(const ShapeA *p_shape_A, const Transform3D &p_transform_A, const ShapeB *p_shape_B, const Transform3D &p_transform_B, _CollectorCallback *p_callback, real_t p_margin_A = 0, real_t p_margin_B = 0) {
-		best_depth = 1e15;
 		shape_A = p_shape_A;
 		shape_B = p_shape_B;
 		transform_A = &p_transform_A;
@@ -2272,13 +2271,13 @@ static void _collision_convex_polygon_face(const Shape3DSW *p_a, const Transform
 bool sat_calculate_penetration(const Shape3DSW *p_shape_A, const Transform3D &p_transform_A, const Shape3DSW *p_shape_B, const Transform3D &p_transform_B, CollisionSolver3DSW::CallbackResult p_result_callback, void *p_userdata, bool p_swap, Vector3 *r_prev_axis, real_t p_margin_a, real_t p_margin_b) {
 	PhysicsServer3D::ShapeType type_A = p_shape_A->get_type();
 
-	ERR_FAIL_COND_V(type_A == PhysicsServer3D::SHAPE_PLANE, false);
+	ERR_FAIL_COND_V(type_A == PhysicsServer3D::SHAPE_WORLD_BOUNDARY, false);
 	ERR_FAIL_COND_V(type_A == PhysicsServer3D::SHAPE_SEPARATION_RAY, false);
 	ERR_FAIL_COND_V(p_shape_A->is_concave(), false);
 
 	PhysicsServer3D::ShapeType type_B = p_shape_B->get_type();
 
-	ERR_FAIL_COND_V(type_B == PhysicsServer3D::SHAPE_PLANE, false);
+	ERR_FAIL_COND_V(type_B == PhysicsServer3D::SHAPE_WORLD_BOUNDARY, false);
 	ERR_FAIL_COND_V(type_B == PhysicsServer3D::SHAPE_SEPARATION_RAY, false);
 	ERR_FAIL_COND_V(p_shape_B->is_concave(), false);
 

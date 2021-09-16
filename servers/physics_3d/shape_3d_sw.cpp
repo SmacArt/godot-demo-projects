@@ -101,30 +101,25 @@ const Map<ShapeOwner3DSW *, int> &Shape3DSW::get_owners() const {
 	return owners;
 }
 
-Shape3DSW::Shape3DSW() {
-	custom_bias = 0;
-	configured = false;
-}
-
 Shape3DSW::~Shape3DSW() {
 	ERR_FAIL_COND(owners.size());
 }
 
-Plane PlaneShape3DSW::get_plane() const {
+Plane WorldBoundaryShape3DSW::get_plane() const {
 	return plane;
 }
 
-void PlaneShape3DSW::project_range(const Vector3 &p_normal, const Transform3D &p_transform, real_t &r_min, real_t &r_max) const {
+void WorldBoundaryShape3DSW::project_range(const Vector3 &p_normal, const Transform3D &p_transform, real_t &r_min, real_t &r_max) const {
 	// gibberish, a plane is infinity
 	r_min = -1e7;
 	r_max = 1e7;
 }
 
-Vector3 PlaneShape3DSW::get_support(const Vector3 &p_normal) const {
+Vector3 WorldBoundaryShape3DSW::get_support(const Vector3 &p_normal) const {
 	return p_normal * 1e15;
 }
 
-bool PlaneShape3DSW::intersect_segment(const Vector3 &p_begin, const Vector3 &p_end, Vector3 &r_result, Vector3 &r_normal) const {
+bool WorldBoundaryShape3DSW::intersect_segment(const Vector3 &p_begin, const Vector3 &p_end, Vector3 &r_result, Vector3 &r_normal) const {
 	bool inters = plane.intersects_segment(p_begin, p_end, &r_result);
 	if (inters) {
 		r_normal = plane.normal;
@@ -132,11 +127,11 @@ bool PlaneShape3DSW::intersect_segment(const Vector3 &p_begin, const Vector3 &p_
 	return inters;
 }
 
-bool PlaneShape3DSW::intersect_point(const Vector3 &p_point) const {
+bool WorldBoundaryShape3DSW::intersect_point(const Vector3 &p_point) const {
 	return plane.distance_to(p_point) < 0;
 }
 
-Vector3 PlaneShape3DSW::get_closest_point_to(const Vector3 &p_point) const {
+Vector3 WorldBoundaryShape3DSW::get_closest_point_to(const Vector3 &p_point) const {
 	if (plane.is_point_over(p_point)) {
 		return plane.project(p_point);
 	} else {
@@ -144,24 +139,24 @@ Vector3 PlaneShape3DSW::get_closest_point_to(const Vector3 &p_point) const {
 	}
 }
 
-Vector3 PlaneShape3DSW::get_moment_of_inertia(real_t p_mass) const {
-	return Vector3(); //wtf
+Vector3 WorldBoundaryShape3DSW::get_moment_of_inertia(real_t p_mass) const {
+	return Vector3(); // not applicable.
 }
 
-void PlaneShape3DSW::_setup(const Plane &p_plane) {
+void WorldBoundaryShape3DSW::_setup(const Plane &p_plane) {
 	plane = p_plane;
 	configure(AABB(Vector3(-1e4, -1e4, -1e4), Vector3(1e4 * 2, 1e4 * 2, 1e4 * 2)));
 }
 
-void PlaneShape3DSW::set_data(const Variant &p_data) {
+void WorldBoundaryShape3DSW::set_data(const Variant &p_data) {
 	_setup(p_data);
 }
 
-Variant PlaneShape3DSW::get_data() const {
+Variant WorldBoundaryShape3DSW::get_data() const {
 	return plane;
 }
 
-PlaneShape3DSW::PlaneShape3DSW() {
+WorldBoundaryShape3DSW::WorldBoundaryShape3DSW() {
 }
 
 //
@@ -244,10 +239,7 @@ Variant SeparationRayShape3DSW::get_data() const {
 	return d;
 }
 
-SeparationRayShape3DSW::SeparationRayShape3DSW() {
-	length = 1;
-	slide_on_slope = false;
-}
+SeparationRayShape3DSW::SeparationRayShape3DSW() {}
 
 /********** SPHERE *************/
 
@@ -311,9 +303,7 @@ Variant SphereShape3DSW::get_data() const {
 	return radius;
 }
 
-SphereShape3DSW::SphereShape3DSW() {
-	radius = 0;
-}
+SphereShape3DSW::SphereShape3DSW() {}
 
 /********** BOX *************/
 
@@ -502,8 +492,7 @@ Variant BoxShape3DSW::get_data() const {
 	return half_extents;
 }
 
-BoxShape3DSW::BoxShape3DSW() {
-}
+BoxShape3DSW::BoxShape3DSW() {}
 
 /********** CAPSULE *************/
 
@@ -668,9 +657,7 @@ Variant CapsuleShape3DSW::get_data() const {
 	return d;
 }
 
-CapsuleShape3DSW::CapsuleShape3DSW() {
-	height = radius = 0;
-}
+CapsuleShape3DSW::CapsuleShape3DSW() {}
 
 /********** CYLINDER *************/
 
@@ -848,9 +835,7 @@ Variant CylinderShape3DSW::get_data() const {
 	return d;
 }
 
-CylinderShape3DSW::CylinderShape3DSW() {
-	height = radius = 0;
-}
+CylinderShape3DSW::CylinderShape3DSW() {}
 
 /********** CONVEX POLYGON *************/
 

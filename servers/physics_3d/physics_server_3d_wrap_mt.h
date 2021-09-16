@@ -58,7 +58,7 @@ class PhysicsServer3DWrapMT : public PhysicsServer3D {
 	bool create_thread = false;
 
 	Semaphore step_sem;
-	int step_pending;
+	int step_pending = 0;
 	void thread_step(real_t p_delta);
 	void thread_flush();
 
@@ -78,7 +78,7 @@ public:
 #include "servers/server_wrap_mt_common.h"
 
 	//FUNC1RID(shape,ShapeType); todo fix
-	FUNCRID(plane_shape)
+	FUNCRID(world_boundary_shape)
 	FUNCRID(separation_ray_shape)
 	FUNCRID(sphere_shape)
 	FUNCRID(box_shape)

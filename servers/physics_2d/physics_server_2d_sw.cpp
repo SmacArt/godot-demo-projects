@@ -43,8 +43,8 @@
 RID PhysicsServer2DSW::_shape_create(ShapeType p_shape) {
 	Shape2DSW *shape = nullptr;
 	switch (p_shape) {
-		case SHAPE_WORLD_MARGIN: {
-			shape = memnew(WorldMarginShape2DSW);
+		case SHAPE_WORLD_BOUNDARY: {
+			shape = memnew(WorldBoundaryShape2DSW);
 		} break;
 		case SHAPE_SEPARATION_RAY: {
 			shape = memnew(SeparationRayShape2DSW);
@@ -79,8 +79,8 @@ RID PhysicsServer2DSW::_shape_create(ShapeType p_shape) {
 	return id;
 }
 
-RID PhysicsServer2DSW::world_margin_shape_create() {
-	return _shape_create(SHAPE_WORLD_MARGIN);
+RID PhysicsServer2DSW::world_boundary_shape_create() {
+	return _shape_create(SHAPE_WORLD_BOUNDARY);
 }
 
 RID PhysicsServer2DSW::separation_ray_shape_create() {
@@ -1357,10 +1357,5 @@ PhysicsServer2DSW::PhysicsServer2DSW(bool p_using_threads) {
 	singletonsw = this;
 	BroadPhase2DSW::create_func = BroadPhase2DBVH::_create;
 
-	active = true;
-	island_count = 0;
-	active_objects = 0;
-	collision_pairs = 0;
 	using_threads = p_using_threads;
-	flushing_queries = false;
 };

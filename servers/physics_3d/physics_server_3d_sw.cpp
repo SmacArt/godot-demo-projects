@@ -43,8 +43,8 @@
 #define FLUSH_QUERY_CHECK(m_object) \
 	ERR_FAIL_COND_MSG(m_object->get_space() && flushing_queries, "Can't change this state while flushing queries. Use call_deferred() or set_deferred() to change monitoring state instead.");
 
-RID PhysicsServer3DSW::plane_shape_create() {
-	Shape3DSW *shape = memnew(PlaneShape3DSW);
+RID PhysicsServer3DSW::world_boundary_shape_create() {
+	Shape3DSW *shape = memnew(WorldBoundaryShape3DSW);
 	RID rid = shape_owner.make_rid(shape);
 	shape->set_self(rid);
 	return rid;
@@ -1744,11 +1744,5 @@ PhysicsServer3DSW::PhysicsServer3DSW(bool p_using_threads) {
 	singletonsw = this;
 	BroadPhase3DSW::create_func = BroadPhase3DBVH::_create;
 
-	island_count = 0;
-	active_objects = 0;
-	collision_pairs = 0;
 	using_threads = p_using_threads;
-	active = true;
-	flushing_queries = false;
-	doing_sync = false;
 };

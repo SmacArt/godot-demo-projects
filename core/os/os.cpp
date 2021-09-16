@@ -146,6 +146,10 @@ bool OS::is_stdout_verbose() const {
 	return _verbose_stdout;
 }
 
+bool OS::is_single_window() const {
+	return _single_window;
+}
+
 bool OS::is_stdout_debug_enabled() const {
 	return _debug_stdout;
 }
@@ -225,6 +229,12 @@ void OS::set_exit_code(int p_code) {
 
 String OS::get_locale() const {
 	return "en";
+}
+
+// Non-virtual helper to extract the 2 or 3-letter language code from
+// `get_locale()` in a way that's consistent for all platforms.
+String OS::get_locale_language() const {
+	return get_locale().left(3).replace("_", "");
 }
 
 // Helper function to ensure that a dir name/path will be valid on the OS

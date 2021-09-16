@@ -279,6 +279,9 @@
 		<member name="audio/driver/mix_rate" type="int" setter="" getter="" default="44100">
 			The mixing rate used for audio (in Hz). In general, it's better to not touch this and leave it to the host operating system.
 		</member>
+		<member name="audio/driver/mix_rate.web" type="int" setter="" getter="" default="0">
+			Safer override for [member audio/driver/mix_rate] in the Web platform. Here [code]0[/code] means "let the browser choose" (since some browsers do not like forcing the mix rate).
+		</member>
 		<member name="audio/driver/output_latency" type="int" setter="" getter="" default="15">
 			Output latency in milliseconds for audio. Lower values will result in lower audio latency at the cost of increased CPU usage. Low values may result in audible cracking on slower hardware.
 		</member>
@@ -628,19 +631,19 @@
 		</member>
 		<member name="input/ui_text_backspace_all_to_left" type="Dictionary" setter="" getter="">
 		</member>
-		<member name="input/ui_text_backspace_all_to_left.osx" type="Dictionary" setter="" getter="">
+		<member name="input/ui_text_backspace_all_to_left.macos" type="Dictionary" setter="" getter="">
 		</member>
 		<member name="input/ui_text_backspace_word" type="Dictionary" setter="" getter="">
 		</member>
-		<member name="input/ui_text_backspace_word.osx" type="Dictionary" setter="" getter="">
+		<member name="input/ui_text_backspace_word.macos" type="Dictionary" setter="" getter="">
 		</member>
 		<member name="input/ui_text_caret_document_end" type="Dictionary" setter="" getter="">
 		</member>
-		<member name="input/ui_text_caret_document_end.osx" type="Dictionary" setter="" getter="">
+		<member name="input/ui_text_caret_document_end.macos" type="Dictionary" setter="" getter="">
 		</member>
 		<member name="input/ui_text_caret_document_start" type="Dictionary" setter="" getter="">
 		</member>
-		<member name="input/ui_text_caret_document_start.osx" type="Dictionary" setter="" getter="">
+		<member name="input/ui_text_caret_document_start.macos" type="Dictionary" setter="" getter="">
 		</member>
 		<member name="input/ui_text_caret_down" type="Dictionary" setter="" getter="">
 		</member>
@@ -648,11 +651,11 @@
 		</member>
 		<member name="input/ui_text_caret_line_end" type="Dictionary" setter="" getter="">
 		</member>
-		<member name="input/ui_text_caret_line_end.osx" type="Dictionary" setter="" getter="">
+		<member name="input/ui_text_caret_line_end.macos" type="Dictionary" setter="" getter="">
 		</member>
 		<member name="input/ui_text_caret_line_start" type="Dictionary" setter="" getter="">
 		</member>
-		<member name="input/ui_text_caret_line_start.osx" type="Dictionary" setter="" getter="">
+		<member name="input/ui_text_caret_line_start.macos" type="Dictionary" setter="" getter="">
 		</member>
 		<member name="input/ui_text_caret_page_down" type="Dictionary" setter="" getter="">
 		</member>
@@ -664,11 +667,11 @@
 		</member>
 		<member name="input/ui_text_caret_word_left" type="Dictionary" setter="" getter="">
 		</member>
-		<member name="input/ui_text_caret_word_left.osx" type="Dictionary" setter="" getter="">
+		<member name="input/ui_text_caret_word_left.macos" type="Dictionary" setter="" getter="">
 		</member>
 		<member name="input/ui_text_caret_word_right" type="Dictionary" setter="" getter="">
 		</member>
-		<member name="input/ui_text_caret_word_right.osx" type="Dictionary" setter="" getter="">
+		<member name="input/ui_text_caret_word_right.macos" type="Dictionary" setter="" getter="">
 		</member>
 		<member name="input/ui_text_completion_accept" type="Dictionary" setter="" getter="">
 		</member>
@@ -682,11 +685,11 @@
 		</member>
 		<member name="input/ui_text_delete_all_to_right" type="Dictionary" setter="" getter="">
 		</member>
-		<member name="input/ui_text_delete_all_to_right.osx" type="Dictionary" setter="" getter="">
+		<member name="input/ui_text_delete_all_to_right.macos" type="Dictionary" setter="" getter="">
 		</member>
 		<member name="input/ui_text_delete_word" type="Dictionary" setter="" getter="">
 		</member>
-		<member name="input/ui_text_delete_word.osx" type="Dictionary" setter="" getter="">
+		<member name="input/ui_text_delete_word.macos" type="Dictionary" setter="" getter="">
 		</member>
 		<member name="input/ui_text_indent" type="Dictionary" setter="" getter="">
 		</member>
@@ -698,11 +701,11 @@
 		</member>
 		<member name="input/ui_text_scroll_down" type="Dictionary" setter="" getter="">
 		</member>
-		<member name="input/ui_text_scroll_down.osx" type="Dictionary" setter="" getter="">
+		<member name="input/ui_text_scroll_down.macos" type="Dictionary" setter="" getter="">
 		</member>
 		<member name="input/ui_text_scroll_up" type="Dictionary" setter="" getter="">
 		</member>
-		<member name="input/ui_text_scroll_up.osx" type="Dictionary" setter="" getter="">
+		<member name="input/ui_text_scroll_up.macos" type="Dictionary" setter="" getter="">
 		</member>
 		<member name="input/ui_text_select_all" type="Dictionary" setter="" getter="">
 		</member>

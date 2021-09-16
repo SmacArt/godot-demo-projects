@@ -715,7 +715,27 @@ void CodeTextEditor::input(const Ref<InputEvent> &event) {
 	ERR_FAIL_COND(event.is_null());
 
 	const Ref<InputEventKey> key_event = event;
-	if (!key_event.is_valid() || !key_event->is_pressed() || !text_editor->has_focus()) {
+
+	if (!key_event.is_valid()) {
+		return;
+	}
+	if (!key_event->is_pressed()) {
+		return;
+	}
+
+	if (!text_editor->has_focus()) {
+		if ((find_replace_bar != nullptr && find_replace_bar->is_visible()) && (find_replace_bar->has_focus() || find_replace_bar->is_ancestor_of(get_focus_owner()))) {
+			if (ED_IS_SHORTCUT("script_text_editor/find_next", key_event)) {
+				find_replace_bar->search_next();
+				accept_event();
+				return;
+			}
+			if (ED_IS_SHORTCUT("script_text_editor/find_previous", key_event)) {
+				find_replace_bar->search_prev();
+				accept_event();
+				return;
+			}
+		}
 		return;
 	}
 
@@ -814,11 +834,9 @@ void CodeTextEditor::_line_col_changed() {
 	}
 
 	StringBuilder sb;
-	sb.append("(");
-	sb.append(itos(text_editor->get_caret_line() + 1).lpad(3));
-	sb.append(",");
+	sb.append(itos(text_editor->get_caret_line() + 1).lpad(4));
+	sb.append(" : ");
 	sb.append(itos(positional_column + 1).lpad(3));
-	sb.append(")");
 
 	line_and_col_txt->set_text(sb.as_string());
 }
@@ -1282,7 +1300,9 @@ void CodeTextEditor::_delete_line(int p_line) {
 		text_editor->set_caret_column(0);
 	}
 	text_editor->backspace();
-	text_editor->unfold_line(p_line);
+	if (p_line < text_editor->get_line_count()) {
+		text_editor->unfold_line(p_line);
+	}
 	text_editor->set_caret_line(p_line);
 }
 
@@ -1735,7 +1755,7 @@ void CodeTextEditor::goto_prev_bookmark() {
 		text_editor->set_caret_line(bmarks[bmarks.size() - 1]);
 		text_editor->center_viewport_to_caret();
 	} else {
-		for (int i = bmarks.size(); i >= 0; i--) {
+		for (int i = bmarks.size() - 1; i >= 0; i--) {
 			int bmark_line = bmarks[i];
 			if (bmark_line < line) {
 				text_editor->unfold_line(bmark_line);
