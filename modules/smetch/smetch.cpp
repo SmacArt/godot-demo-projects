@@ -6,10 +6,11 @@
 #include <iostream>
 
 void Smetch::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_properties", "SmetchProperties"), &Smetch::set_properties);
-	ClassDB::bind_method(D_METHOD("get_properties"), &Smetch::get_properties);
 
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "SmetchProperties", PROPERTY_HINT_RESOURCE_TYPE, "SmetchProperties"), "set_properties", "get_properties");
+	ClassDB::bind_method(D_METHOD("set_parameters", "SmetchParameters"), &Smetch::set_parameters);
+	ClassDB::bind_method(D_METHOD("get_parameters"), &Smetch::get_parameters);
+	ClassDB::bind_method(D_METHOD("set_content", "SmetchContent"), &Smetch::set_content);
+	ClassDB::bind_method(D_METHOD("get_content"), &Smetch::get_content);
 
 	ClassDB::bind_method(D_METHOD("color_mode", "mode", "value1", "value2", "value3", "value4"), &Smetch::color_mode, DEFVAL(RGB), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("prime_color", "value1", "value2", "value3", "value4"), &Smetch::prime_color, DEFVAL(Color()), DEFVAL(1), DEFVAL(-1), DEFVAL(-1), DEFVAL(-1));
@@ -91,15 +92,24 @@ void Smetch::_bind_methods() {
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("PaletteSortMode"), StringName("ALPHA"), ALPHA);
 	ClassDB::bind_integer_constant(StringName("Smetch"), StringName("PaletteSortMode"), StringName("NONE"), NONE);
 
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "SmetchParameters", PROPERTY_HINT_RESOURCE_TYPE, "SmetchParameters"), "set_parameters", "get_parameters");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "SmetchContent", PROPERTY_HINT_RESOURCE_TYPE, "SmetchContent"), "set_content", "get_content");
+
 	ADD_SIGNAL(MethodInfo("file_selected"));
 }
 
-void Smetch::set_properties(const Ref<SmetchProperties> &p_properties) {
-	properties = p_properties;
+void Smetch::set_parameters(const Ref<SmetchParameters> &p_parameters) {
+	parameters = p_parameters;
+}
+Ref<SmetchParameters> Smetch::get_parameters() const {
+	return parameters;
 }
 
-Ref<SmetchProperties> Smetch::get_properties() const {
-	return properties;
+void Smetch::set_content(const Ref<SmetchContent> &p_content) {
+	content = p_content;
+}
+Ref<SmetchContent> Smetch::get_content() const {
+	return content;
 }
 
 Color Smetch::apply_color(float value1, float value2, float value3, float value4, Color to_color) {
@@ -426,10 +436,10 @@ void Smetch::_ready() {
 
 	int seed = OS::get_singleton()->get_unix_time();
 	bool seeded = false;
-	if (properties != nullptr) {
-		if (properties->get_random_seed() > 0) {
-			print_line("Using random seed: " + itos(properties->get_random_seed()));
-			seed = properties->get_random_seed();
+	if (parameters != nullptr) {
+		if (parameters->get_random_seed() > 0) {
+			print_line("Using random seed: " + itos(parameters->get_random_seed()));
+			seed = parameters->get_random_seed();
 			seed_random_number_generator(seed, false);
 			seeded = true;
 		}

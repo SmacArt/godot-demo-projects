@@ -11,7 +11,8 @@
 #include "scene/gui/file_dialog.h"
 #include "scene/gui/texture_rect.h"
 #include "scene/main/viewport.h"
-#include "smetch_properties.h"
+#include "smetch_parameters.h"
+#include "smetch_content.h"
 
 class Smetch : public TextureRect {
 	GDCLASS(Smetch, TextureRect);
@@ -93,8 +94,10 @@ public:
 		}
   };
 
-	void set_properties(const Ref<SmetchProperties> &properties);
-	Ref<SmetchProperties> get_properties() const;
+	void set_parameters(const Ref<SmetchParameters> &parameters);
+	Ref<SmetchParameters> get_parameters() const;
+	void set_content(const Ref<SmetchContent> &content);
+	Ref<SmetchContent> get_content() const;
 
   void seed_random_number_generator(int seed, bool randomize);
 	void background(float value1, float value2, float value3);
@@ -170,7 +173,8 @@ private:
 	void palette_quicksort(int low, int high);
 	int palette_sort_partition(int low, int high);
 
-	Ref<SmetchProperties> properties;
+	Ref<SmetchParameters> parameters;
+  Ref<SmetchContent> content;
 
 	Color fill_color;
 	Color background_color;
