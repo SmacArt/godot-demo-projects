@@ -22,8 +22,6 @@ public:
 
 	int get_type();
 	void set_type(int type);
-	int get_seq();
-	void set_seq(int seq);
 	String get_id();
 	String get_id_();
 	void set_id(String id);
@@ -31,20 +29,19 @@ public:
 	void set_title(String description);
 	String get_description();
 	void set_description(String description);
-	void set_image(String image);
+	void set_image(String image_path);
 	String get_image();
-	Ref<SmetchContent> get_parent_content();
-	void set_parent_content(const Ref<SmetchContent> &parent_content);
+  void set_scene(String scene_path);
+  String get_scene();
 
 private:
 	int type;
-	int seq;
 	String id;
 	String title;
 	String description;
+	String scene;
 	String image;
 
-	Ref<SmetchContent> parent_content;
 };
 
 #endif // SMETCH_CONTENT_H
