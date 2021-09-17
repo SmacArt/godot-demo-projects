@@ -6,7 +6,6 @@
 #include <iostream>
 
 void Smetch::_bind_methods() {
-
 	ClassDB::bind_method(D_METHOD("set_parameters", "SmetchParameters"), &Smetch::set_parameters);
 	ClassDB::bind_method(D_METHOD("get_parameters"), &Smetch::get_parameters);
 	ClassDB::bind_method(D_METHOD("set_content", "SmetchContent"), &Smetch::set_content);
@@ -434,19 +433,12 @@ void Smetch::_ready() {
 	connect("mouse_entered", callable_mp(this, &Smetch::mouse_entered));
 	connect("mouse_exited", callable_mp(this, &Smetch::mouse_exited));
 
-	int seed = OS::get_singleton()->get_unix_time();
-	bool seeded = false;
 	if (parameters != nullptr) {
-		if (parameters->get_random_seed() > 0) {
-			print_line("Using random seed: " + itos(parameters->get_random_seed()));
-			seed = parameters->get_random_seed();
-			seed_random_number_generator(seed, false);
-			seeded = true;
-		}
-	}
-	if (!seeded) {
-		print_line("Seeding and Randomizing 0");
-		seed_random_number_generator(0, true);
+		print_line("Using parameter random seed: " + itos(parameters->get_random_seed()));
+		seed_random_number_generator(parameters->get_random_seed(), parameters->get_randomize());
+	} else {
+		print_line("Auto Seeding and Randomizing");
+		seed_random_number_generator(OS::get_singleton()->get_unix_time(), true);
 	}
 }
 

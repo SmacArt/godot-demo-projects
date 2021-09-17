@@ -8,25 +8,25 @@
 class SmetchContent : public Resource {
 	GDCLASS(SmetchContent, Resource);
 
-
 protected:
 	static void _bind_methods();
 
 public:
+	enum ContentType {
+		ROOT,
+		MODULE,
+		CHAPTER,
+		SECTION,
+		SMETCH
+	};
 
-  enum ContentType {
-    MODULE,
-    CHAPTER,
-    SECTION,
-    SMETCH
-  };
-
+	int get_type();
+	void set_type(int type);
 	int get_seq();
 	void set_seq(int seq);
 	String get_id();
+	String get_id_();
 	void set_id(String id);
-  int get_type();
-  void set_type(int type);
 	String get_title();
 	void set_title(String description);
 	String get_description();
@@ -37,12 +37,13 @@ public:
 	void set_parent_content(const Ref<SmetchContent> &parent_content);
 
 private:
-  int seq;
+	int type;
+	int seq;
 	String id;
-  int type;
 	String title;
 	String description;
 	String image;
+
 	Ref<SmetchContent> parent_content;
 };
 

@@ -3,6 +3,7 @@
 #include "smetch_content.h"
 
 void SmetchContent::_bind_methods() {
+	ClassDB::bind_integer_constant(StringName("SmetchContent"), StringName("ContentType"), StringName("Root"), ROOT);
 	ClassDB::bind_integer_constant(StringName("SmetchContent"), StringName("ContentType"), StringName("Module"), MODULE);
 	ClassDB::bind_integer_constant(StringName("SmetchContent"), StringName("ContentType"), StringName("Chapter"), CHAPTER);
 	ClassDB::bind_integer_constant(StringName("SmetchContent"), StringName("ContentType"), StringName("Section"), SECTION);
@@ -13,6 +14,7 @@ void SmetchContent::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_seq"), &SmetchContent::get_seq);
 	ClassDB::bind_method(D_METHOD("set_seq"), &SmetchContent::set_seq);
 	ClassDB::bind_method(D_METHOD("get_id"), &SmetchContent::get_id);
+	ClassDB::bind_method(D_METHOD("get_id_"), &SmetchContent::get_id_);
 	ClassDB::bind_method(D_METHOD("set_id"), &SmetchContent::set_id);
 	ClassDB::bind_method(D_METHOD("get_title"), &SmetchContent::get_title);
 	ClassDB::bind_method(D_METHOD("set_title"), &SmetchContent::set_title);
@@ -24,7 +26,7 @@ void SmetchContent::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_parent_content"), &SmetchContent::get_parent_content);
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "parent_content", PROPERTY_HINT_RESOURCE_TYPE, "SmetchContent"), "set_parent_content", "get_parent_content");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "type", PROPERTY_HINT_ENUM, "Module,Chapter,Section,Smetch"), "set_type", "get_type");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "type", PROPERTY_HINT_ENUM, "Root,Module,Chapter,Section,Smetch"), "set_type", "get_type");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "seq"), "set_seq", "get_seq");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "id"), "set_id", "get_id");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "title"), "set_title", "get_title");
@@ -41,6 +43,10 @@ void SmetchContent::set_seq(int p_seq) {
 
 String SmetchContent::get_id() {
 	return id;
+}
+String SmetchContent::get_id_() {
+	// todo : check for null
+	return id.replace(".", "_");
 }
 void SmetchContent::set_id(String p_id) {
 	id = p_id;

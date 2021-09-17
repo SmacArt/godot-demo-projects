@@ -9,7 +9,8 @@ class SmetchParameters : public Resource {
 	GDCLASS(SmetchParameters, Resource);
 
 private:
-  int random_seed;
+  int random_seed = 0;
+  bool randomize = true;
 
 protected:
 	static void _bind_methods();
@@ -17,6 +18,8 @@ protected:
 public:
   int get_random_seed();
   void set_random_seed(int seed);
+  bool get_randomize();
+  void set_randomize(bool randonize);
 
 private:
 };
