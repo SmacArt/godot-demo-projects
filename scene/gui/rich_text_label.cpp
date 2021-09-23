@@ -333,7 +333,7 @@ void RichTextLabel::_resize_line(ItemFrame *p_frame, int p_line, const Ref<Font>
 						} else {
 							frame->lines.write[i].offset.y = 0;
 						}
-						frame->lines.write[i].offset += Vector2(offset.x, offset.y);
+						frame->lines.write[i].offset += offset;
 
 						float h = frame->lines[i].text_buf->get_size().y;
 						if (frame->min_size_over.y > 0) {
@@ -399,8 +399,9 @@ void RichTextLabel::_shape_line(ItemFrame *p_frame, int p_line, const Ref<Font> 
 	// Shape current paragraph.
 	String text;
 	Item *it_to = (p_line + 1 < p_frame->lines.size()) ? p_frame->lines[p_line + 1].from : nullptr;
+	int remaining_characters = visible_characters - l.char_offset;
 	for (Item *it = l.from; it && it != it_to; it = _get_next_item(it)) {
-		if (visible_characters >= 0 && l.char_offset + l.char_count > visible_characters) {
+		if (visible_characters >= 0 && remaining_characters <= 0) {
 			break;
 		}
 		switch (it->type) {
@@ -427,7 +428,8 @@ void RichTextLabel::_shape_line(ItemFrame *p_frame, int p_line, const Ref<Font> 
 				}
 				l.text_buf->add_string("\n", font, font_size, Dictionary(), "");
 				text += "\n";
-				l.char_count += 1;
+				l.char_count++;
+				remaining_characters--;
 			} break;
 			case ITEM_TEXT: {
 				ItemText *t = (ItemText *)it;
@@ -442,9 +444,10 @@ void RichTextLabel::_shape_line(ItemFrame *p_frame, int p_line, const Ref<Font> 
 				Dictionary font_ftr = _find_font_features(it);
 				String lang = _find_language(it);
 				String tx = t->text;
-				if (visible_characters >= 0 && l.char_offset + l.char_count + tx.length() > visible_characters) {
-					tx = tx.substr(0, l.char_offset + l.char_count + tx.length() - visible_characters);
+				if (visible_characters >= 0 && remaining_characters >= 0) {
+					tx = tx.substr(0, remaining_characters);
 				}
+				remaining_characters -= tx.length();
 
 				l.text_buf->add_string(tx, font, font_size, font_ftr, lang);
 				text += tx;
@@ -454,7 +457,8 @@ void RichTextLabel::_shape_line(ItemFrame *p_frame, int p_line, const Ref<Font> 
 				ItemImage *img = (ItemImage *)it;
 				l.text_buf->add_object((uint64_t)it, img->image->get_size(), img->inline_align, 1);
 				text += String::chr(0xfffc);
-				l.char_count += 1;
+				l.char_count++;
+				remaining_characters--;
 			} break;
 			case ITEM_TABLE: {
 				ItemTable *table = static_cast<ItemTable *>(it);
@@ -483,6 +487,7 @@ void RichTextLabel::_shape_line(ItemFrame *p_frame, int p_line, const Ref<Font> 
 						int cell_ch = (char_offset - (l.char_offset + l.char_count));
 						l.char_count += cell_ch;
 						t_char_count += cell_ch;
+						remaining_characters -= cell_ch;
 
 						table->columns.write[column].min_width = MAX(table->columns[column].min_width, ceil(frame->lines[i].text_buf->get_size().x));
 						table->columns.write[column].max_width = MAX(table->columns[column].max_width, ceil(frame->lines[i].text_buf->get_non_wraped_size().x));
@@ -573,7 +578,7 @@ void RichTextLabel::_shape_line(ItemFrame *p_frame, int p_line, const Ref<Font> 
 						} else {
 							frame->lines.write[i].offset.y = 0;
 						}
-						frame->lines.write[i].offset += Vector2(offset.x, offset.y);
+						frame->lines.write[i].offset += offset;
 
 						float h = frame->lines[i].text_buf->get_size().y;
 						if (frame->min_size_over.y > 0) {
@@ -847,6 +852,21 @@ int RichTextLabel::_draw_line(ItemFrame *p_frame, int p_line, const Vector2 &p_o
 			Point2 fx_offset = Vector2(glyphs[i].x_off, glyphs[i].y_off);
 			RID frid = glyphs[i].font_rid;
 			uint32_t gl = glyphs[i].index;
+			uint16_t gl_fl = glyphs[i].flags;
+			uint8_t gl_cn = glyphs[i].count;
+			bool cprev = false;
+			if (gl_cn == 0) { // Parts of the same cluster, always connected.
+				cprev = true;
+			}
+			if (gl_fl & TextServer::GRAPHEME_IS_RTL) { // Check if previous grapheme cluster is connected.
+				if (i > 0 && (glyphs[i - 1].flags & TextServer::GRAPHEME_IS_CONNECTED)) {
+					cprev = true;
+				}
+			} else {
+				if (glyphs[i].flags & TextServer::GRAPHEME_IS_CONNECTED) {
+					cprev = true;
+				}
+			}
 
 			//Apply fx.
 			float faded_visibility = 1.0f;
@@ -875,6 +895,8 @@ int RichTextLabel::_draw_line(ItemFrame *p_frame, int p_line, const Vector2 &p_o
 						charfx->outline = true;
 						charfx->font = frid;
 						charfx->glyph_index = gl;
+						charfx->glyph_flags = gl_fl;
+						charfx->glyph_count = gl_cn;
 						charfx->offset = fx_offset;
 						charfx->color = font_color;
 
@@ -890,25 +912,34 @@ int RichTextLabel::_draw_line(ItemFrame *p_frame, int p_line, const Vector2 &p_o
 				} else if (item_fx->type == ITEM_SHAKE) {
 					ItemShake *item_shake = static_cast<ItemShake *>(item_fx);
 
-					uint64_t char_current_rand = item_shake->offset_random(glyphs[i].start);
-					uint64_t char_previous_rand = item_shake->offset_previous_random(glyphs[i].start);
-					uint64_t max_rand = 2147483647;
-					double current_offset = Math::range_lerp(char_current_rand % max_rand, 0, max_rand, 0.0f, 2.f * (float)Math_PI);
-					double previous_offset = Math::range_lerp(char_previous_rand % max_rand, 0, max_rand, 0.0f, 2.f * (float)Math_PI);
-					double n_time = (double)(item_shake->elapsed_time / (0.5f / item_shake->rate));
-					n_time = (n_time > 1.0) ? 1.0 : n_time;
-					fx_offset += Point2(Math::lerp(Math::sin(previous_offset), Math::sin(current_offset), n_time), Math::lerp(Math::cos(previous_offset), Math::cos(current_offset), n_time)) * (float)item_shake->strength / 10.0f;
+					if (!cprev) {
+						uint64_t char_current_rand = item_shake->offset_random(glyphs[i].start);
+						uint64_t char_previous_rand = item_shake->offset_previous_random(glyphs[i].start);
+						uint64_t max_rand = 2147483647;
+						double current_offset = Math::range_lerp(char_current_rand % max_rand, 0, max_rand, 0.0f, 2.f * (float)Math_PI);
+						double previous_offset = Math::range_lerp(char_previous_rand % max_rand, 0, max_rand, 0.0f, 2.f * (float)Math_PI);
+						double n_time = (double)(item_shake->elapsed_time / (0.5f / item_shake->rate));
+						n_time = (n_time > 1.0) ? 1.0 : n_time;
+						item_shake->prev_off = Point2(Math::lerp(Math::sin(previous_offset), Math::sin(current_offset), n_time), Math::lerp(Math::cos(previous_offset), Math::cos(current_offset), n_time)) * (float)item_shake->strength / 10.0f;
+					}
+					fx_offset += item_shake->prev_off;
 				} else if (item_fx->type == ITEM_WAVE) {
 					ItemWave *item_wave = static_cast<ItemWave *>(item_fx);
 
-					double value = Math::sin(item_wave->frequency * item_wave->elapsed_time + ((p_ofs.x + off.x) / 50)) * (item_wave->amplitude / 10.0f);
-					fx_offset += Point2(0, 1) * value;
+					if (!cprev) {
+						double value = Math::sin(item_wave->frequency * item_wave->elapsed_time + ((p_ofs.x + gloff.x) / 50)) * (item_wave->amplitude / 10.0f);
+						item_wave->prev_off = Point2(0, 1) * value;
+					}
+					fx_offset += item_wave->prev_off;
 				} else if (item_fx->type == ITEM_TORNADO) {
 					ItemTornado *item_tornado = static_cast<ItemTornado *>(item_fx);
 
-					double torn_x = Math::sin(item_tornado->frequency * item_tornado->elapsed_time + ((p_ofs.x + gloff.x) / 50)) * (item_tornado->radius);
-					double torn_y = Math::cos(item_tornado->frequency * item_tornado->elapsed_time + ((p_ofs.x + gloff.x) / 50)) * (item_tornado->radius);
-					fx_offset += Point2(torn_x, torn_y);
+					if (!cprev) {
+						double torn_x = Math::sin(item_tornado->frequency * item_tornado->elapsed_time + ((p_ofs.x + gloff.x) / 50)) * (item_tornado->radius);
+						double torn_y = Math::cos(item_tornado->frequency * item_tornado->elapsed_time + ((p_ofs.x + gloff.x) / 50)) * (item_tornado->radius);
+						item_tornado->prev_off = Point2(torn_x, torn_y);
+					}
+					fx_offset += item_tornado->prev_off;
 				} else if (item_fx->type == ITEM_RAINBOW) {
 					ItemRainbow *item_rainbow = static_cast<ItemRainbow *>(item_fx);
 
@@ -999,6 +1030,21 @@ int RichTextLabel::_draw_line(ItemFrame *p_frame, int p_line, const Vector2 &p_o
 			Point2 fx_offset = Vector2(glyphs[i].x_off, glyphs[i].y_off);
 			RID frid = glyphs[i].font_rid;
 			uint32_t gl = glyphs[i].index;
+			uint16_t gl_fl = glyphs[i].flags;
+			uint8_t gl_cn = glyphs[i].count;
+			bool cprev = false;
+			if (gl_cn == 0) { // Parts of the same grapheme cluster, always connected.
+				cprev = true;
+			}
+			if (gl_fl & TextServer::GRAPHEME_IS_RTL) { // Check if previous grapheme cluster is connected.
+				if (i > 0 && (glyphs[i - 1].flags & TextServer::GRAPHEME_IS_CONNECTED)) {
+					cprev = true;
+				}
+			} else {
+				if (glyphs[i].flags & TextServer::GRAPHEME_IS_CONNECTED) {
+					cprev = true;
+				}
+			}
 
 			//Apply fx.
 			float faded_visibility = 1.0f;
@@ -1027,6 +1073,8 @@ int RichTextLabel::_draw_line(ItemFrame *p_frame, int p_line, const Vector2 &p_o
 						charfx->outline = false;
 						charfx->font = frid;
 						charfx->glyph_index = gl;
+						charfx->glyph_flags = gl_fl;
+						charfx->glyph_count = gl_cn;
 						charfx->offset = fx_offset;
 						charfx->color = font_color;
 
@@ -1042,25 +1090,34 @@ int RichTextLabel::_draw_line(ItemFrame *p_frame, int p_line, const Vector2 &p_o
 				} else if (item_fx->type == ITEM_SHAKE) {
 					ItemShake *item_shake = static_cast<ItemShake *>(item_fx);
 
-					uint64_t char_current_rand = item_shake->offset_random(glyphs[i].start);
-					uint64_t char_previous_rand = item_shake->offset_previous_random(glyphs[i].start);
-					uint64_t max_rand = 2147483647;
-					double current_offset = Math::range_lerp(char_current_rand % max_rand, 0, max_rand, 0.0f, 2.f * (float)Math_PI);
-					double previous_offset = Math::range_lerp(char_previous_rand % max_rand, 0, max_rand, 0.0f, 2.f * (float)Math_PI);
-					double n_time = (double)(item_shake->elapsed_time / (0.5f / item_shake->rate));
-					n_time = (n_time > 1.0) ? 1.0 : n_time;
-					fx_offset += Point2(Math::lerp(Math::sin(previous_offset), Math::sin(current_offset), n_time), Math::lerp(Math::cos(previous_offset), Math::cos(current_offset), n_time)) * (float)item_shake->strength / 10.0f;
+					if (!cprev) {
+						uint64_t char_current_rand = item_shake->offset_random(glyphs[i].start);
+						uint64_t char_previous_rand = item_shake->offset_previous_random(glyphs[i].start);
+						uint64_t max_rand = 2147483647;
+						double current_offset = Math::range_lerp(char_current_rand % max_rand, 0, max_rand, 0.0f, 2.f * (float)Math_PI);
+						double previous_offset = Math::range_lerp(char_previous_rand % max_rand, 0, max_rand, 0.0f, 2.f * (float)Math_PI);
+						double n_time = (double)(item_shake->elapsed_time / (0.5f / item_shake->rate));
+						n_time = (n_time > 1.0) ? 1.0 : n_time;
+						item_shake->prev_off = Point2(Math::lerp(Math::sin(previous_offset), Math::sin(current_offset), n_time), Math::lerp(Math::cos(previous_offset), Math::cos(current_offset), n_time)) * (float)item_shake->strength / 10.0f;
+					}
+					fx_offset += item_shake->prev_off;
 				} else if (item_fx->type == ITEM_WAVE) {
 					ItemWave *item_wave = static_cast<ItemWave *>(item_fx);
 
-					double value = Math::sin(item_wave->frequency * item_wave->elapsed_time + ((p_ofs.x + off.x) / 50)) * (item_wave->amplitude / 10.0f);
-					fx_offset += Point2(0, 1) * value;
+					if (!cprev) {
+						double value = Math::sin(item_wave->frequency * item_wave->elapsed_time + ((p_ofs.x + off.x) / 50)) * (item_wave->amplitude / 10.0f);
+						item_wave->prev_off = Point2(0, 1) * value;
+					}
+					fx_offset += item_wave->prev_off;
 				} else if (item_fx->type == ITEM_TORNADO) {
 					ItemTornado *item_tornado = static_cast<ItemTornado *>(item_fx);
 
-					double torn_x = Math::sin(item_tornado->frequency * item_tornado->elapsed_time + ((p_ofs.x + off.x) / 50)) * (item_tornado->radius);
-					double torn_y = Math::cos(item_tornado->frequency * item_tornado->elapsed_time + ((p_ofs.x + off.x) / 50)) * (item_tornado->radius);
-					fx_offset += Point2(torn_x, torn_y);
+					if (!cprev) {
+						double torn_x = Math::sin(item_tornado->frequency * item_tornado->elapsed_time + ((p_ofs.x + off.x) / 50)) * (item_tornado->radius);
+						double torn_y = Math::cos(item_tornado->frequency * item_tornado->elapsed_time + ((p_ofs.x + off.x) / 50)) * (item_tornado->radius);
+						item_tornado->prev_off = Point2(torn_x, torn_y);
+					}
+					fx_offset += item_tornado->prev_off;
 				} else if (item_fx->type == ITEM_RAINBOW) {
 					ItemRainbow *item_rainbow = static_cast<ItemRainbow *>(item_fx);
 
@@ -3855,7 +3912,12 @@ String RichTextLabel::get_parsed_text() const {
 	String text = "";
 	Item *it = main;
 	while (it) {
-		if (it->type == ITEM_TEXT) {
+		if (it->type == ITEM_DROPCAP) {
+			const ItemDropcap *dc = (ItemDropcap *)it;
+			if (dc != nullptr) {
+				text += dc->text;
+			}
+		} else if (it->type == ITEM_TEXT) {
 			ItemText *t = static_cast<ItemText *>(it);
 			text += t->text;
 		} else if (it->type == ITEM_NEWLINE) {
@@ -3926,7 +3988,6 @@ void RichTextLabel::set_percent_visible(float p_percent) {
 		if (p_percent < 0 || p_percent >= 1) {
 			visible_characters = -1;
 			percent_visible = 1;
-
 		} else {
 			visible_characters = get_total_character_count() * p_percent;
 			percent_visible = p_percent;
@@ -4160,16 +4221,20 @@ void RichTextLabel::_bind_methods() {
 }
 
 void RichTextLabel::set_visible_characters(int p_visible) {
-	visible_characters = p_visible;
-	if (p_visible == -1) {
-		percent_visible = 1;
-	} else {
-		int total_char_count = get_total_character_count();
-		if (total_char_count > 0) {
-			percent_visible = (float)p_visible / (float)total_char_count;
+	if (visible_characters != p_visible) {
+		visible_characters = p_visible;
+		if (p_visible == -1) {
+			percent_visible = 1;
+		} else {
+			int total_char_count = get_total_character_count();
+			if (total_char_count > 0) {
+				percent_visible = (float)p_visible / (float)total_char_count;
+			}
 		}
+		main->first_invalid_line = 0; //invalidate ALL
+		_validate_line_caches(main);
+		update();
 	}
-	update();
 }
 
 int RichTextLabel::get_visible_characters() const {
@@ -4177,9 +4242,19 @@ int RichTextLabel::get_visible_characters() const {
 }
 
 int RichTextLabel::get_total_character_count() const {
+	// Note: Do not use line buffer "char_count", it includes only visible characters.
 	int tc = 0;
-	for (int i = 0; i < current_frame->lines.size(); i++) {
-		tc += current_frame->lines[i].char_count;
+	Item *it = main;
+	while (it) {
+		if (it->type == ITEM_TEXT) {
+			ItemText *t = static_cast<ItemText *>(it);
+			tc += t->text.length();
+		} else if (it->type == ITEM_NEWLINE) {
+			tc++;
+		} else if (it->type == ITEM_IMAGE) {
+			tc++;
+		}
+		it = _get_next_item(it, true);
 	}
 
 	return tc;

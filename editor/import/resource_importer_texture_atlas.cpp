@@ -131,9 +131,9 @@ static void _plot_triangle(Vector2i *vertices, const Vector2i &p_offset, bool p_
 	double xf = x[0];
 	double xt = x[0] + dx_upper; // if y[0] == y[1], special case
 	int max_y = MIN(y[2], height - p_offset.y - 1);
-	for (int yi = y[0]; yi <= max_y; yi++) {
+	for (int yi = y[0]; yi < max_y; yi++) {
 		if (yi >= 0) {
-			for (int xi = (xf > 0 ? int(xf) : 0); xi <= (xt < width ? xt : width - 1); xi++) {
+			for (int xi = (xf > 0 ? int(xf) : 0); xi < (xt < width ? xt : width - 1); xi++) {
 				int px = xi, py = yi;
 				int sx = px, sy = py;
 				sx = CLAMP(sx, 0, src_width - 1);
@@ -324,7 +324,7 @@ Error ResourceImporterTextureAtlas::import_group_file(const String &p_group_file
 			atlas_texture.instantiate();
 			atlas_texture->set_atlas(cache);
 			atlas_texture->set_region(Rect2(offset, pack_data.region.size));
-			atlas_texture->set_margin(Rect2(pack_data.region.position, Size2(pack_data.image->get_width(), pack_data.image->get_height()) - pack_data.region.size));
+			atlas_texture->set_margin(Rect2(pack_data.region.position, pack_data.image->get_size() - pack_data.region.size));
 
 			texture = atlas_texture;
 		} else {

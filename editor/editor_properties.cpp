@@ -901,7 +901,7 @@ public:
 					if (layer_index >= layer_count) {
 						if (!flag_rects.is_empty() && (expansion_rows == 0)) {
 							const Rect2 &last_rect = flag_rects[flag_rects.size() - 1];
-							arrow_pos = last_rect.position + last_rect.size;
+							arrow_pos = last_rect.get_end();
 						}
 						break;
 					}
@@ -913,7 +913,7 @@ public:
 						// Keep last valid cell position for the expansion icon.
 						if (!flag_rects.is_empty() && (expansion_rows == 0)) {
 							const Rect2 &last_rect = flag_rects[flag_rects.size() - 1];
-							arrow_pos = last_rect.position + last_rect.size;
+							arrow_pos = last_rect.get_end();
 						}
 						++expansion_rows;
 
@@ -2951,8 +2951,8 @@ void EditorPropertyResource::_update_property_bg() {
 		count_subinspectors = MIN(15, count_subinspectors);
 
 		add_theme_color_override("property_color", get_theme_color(SNAME("sub_inspector_property_color"), SNAME("Editor")));
-		add_theme_style_override("bg_selected", get_theme_stylebox("sub_inspector_property_bg_selected" + itos(count_subinspectors), "Editor"));
-		add_theme_style_override("bg", get_theme_stylebox("sub_inspector_property_bg" + itos(count_subinspectors), "Editor"));
+		add_theme_style_override("bg_selected", get_theme_stylebox("sub_inspector_property_bg_selected" + itos(count_subinspectors), SNAME("Editor")));
+		add_theme_style_override("bg", get_theme_stylebox("sub_inspector_property_bg" + itos(count_subinspectors), SNAME("Editor")));
 
 		add_theme_constant_override("font_offset", get_theme_constant(SNAME("sub_inspector_font_offset"), SNAME("Editor")));
 		add_theme_constant_override("vseparation", 0);

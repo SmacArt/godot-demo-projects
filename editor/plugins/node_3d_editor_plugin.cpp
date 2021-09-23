@@ -128,7 +128,7 @@ void ViewportRotationControl::_draw_axis(const Axis2D &p_axis) {
 
 	const Color axis_color = axis_colors[direction];
 	const double alpha = focused ? 1.0 : ((p_axis.z_axis + 1.0) / 2.0) * 0.5 + 0.5;
-	const Color c = focused ? Color(0.9, 0.9, 0.9) : Color(axis_color.r, axis_color.g, axis_color.b, alpha);
+	const Color c = focused ? Color(0.9, 0.9, 0.9) : Color(axis_color, alpha);
 
 	if (positive) {
 		// Draw axis lines for the positive axes.
@@ -265,15 +265,13 @@ void Node3DEditorViewport::_update_camera(real_t p_interp_delta) {
 		if (is_freelook_active()) {
 			// Higher inertia should increase "lag" (lerp with factor between 0 and 1)
 			// Inertia of zero should produce instant movement (lerp with factor of 1) in this case it returns a really high value and gets clamped to 1.
-			real_t inertia = EDITOR_GET("editors/3d/freelook/freelook_inertia");
-			inertia = MAX(0.001, inertia);
+			const real_t inertia = EDITOR_GET("editors/3d/freelook/freelook_inertia");
 			real_t factor = (1.0 / inertia) * p_interp_delta;
 
 			// We interpolate a different point here, because in freelook mode the focus point (cursor.pos) orbits around eye_pos
 			camera_cursor.eye_pos = old_camera_cursor.eye_pos.lerp(cursor.eye_pos, CLAMP(factor, 0, 1));
 
-			real_t orbit_inertia = EDITOR_GET("editors/3d/navigation_feel/orbit_inertia");
-			orbit_inertia = MAX(0.0001, orbit_inertia);
+			const real_t orbit_inertia = EDITOR_GET("editors/3d/navigation_feel/orbit_inertia");
 			camera_cursor.x_rot = Math::lerp(old_camera_cursor.x_rot, cursor.x_rot, MIN(1.f, p_interp_delta * (1 / orbit_inertia)));
 			camera_cursor.y_rot = Math::lerp(old_camera_cursor.y_rot, cursor.y_rot, MIN(1.f, p_interp_delta * (1 / orbit_inertia)));
 
@@ -289,24 +287,9 @@ void Node3DEditorViewport::_update_camera(real_t p_interp_delta) {
 			camera_cursor.pos = camera_cursor.eye_pos + forward * camera_cursor.distance;
 
 		} else {
-			//when not being manipulated, move softly
-			real_t free_orbit_inertia = EDITOR_GET("editors/3d/navigation_feel/orbit_inertia");
-			real_t free_translation_inertia = EDITOR_GET("editors/3d/navigation_feel/translation_inertia");
-			//when being manipulated, move more quickly
-			real_t manip_orbit_inertia = EDITOR_GET("editors/3d/navigation_feel/manipulation_orbit_inertia");
-			real_t manip_translation_inertia = EDITOR_GET("editors/3d/navigation_feel/manipulation_translation_inertia");
-
-			real_t zoom_inertia = EDITOR_GET("editors/3d/navigation_feel/zoom_inertia");
-
-			//determine if being manipulated
-			bool manipulated = Input::get_singleton()->get_mouse_button_mask() & (2 | 4);
-			manipulated |= Input::get_singleton()->is_key_pressed(KEY_SHIFT);
-			manipulated |= Input::get_singleton()->is_key_pressed(KEY_ALT);
-			manipulated |= Input::get_singleton()->is_key_pressed(KEY_CTRL);
-
-			real_t orbit_inertia = MAX(0.00001, manipulated ? manip_orbit_inertia : free_orbit_inertia);
-			real_t translation_inertia = MAX(0.0001, manipulated ? manip_translation_inertia : free_translation_inertia);
-			zoom_inertia = MAX(0.0001, zoom_inertia);
+			const real_t orbit_inertia = EDITOR_GET("editors/3d/navigation_feel/orbit_inertia");
+			const real_t translation_inertia = EDITOR_GET("editors/3d/navigation_feel/translation_inertia");
+			const real_t zoom_inertia = EDITOR_GET("editors/3d/navigation_feel/zoom_inertia");
 
 			camera_cursor.x_rot = Math::lerp(old_camera_cursor.x_rot, cursor.x_rot, MIN(1.f, p_interp_delta * (1 / orbit_inertia)));
 			camera_cursor.y_rot = Math::lerp(old_camera_cursor.y_rot, cursor.y_rot, MIN(1.f, p_interp_delta * (1 / orbit_inertia)));
@@ -835,7 +818,7 @@ void Node3DEditorViewport::_update_name() {
 			if (orthogonal) {
 				name = TTR("Left Orthogonal");
 			} else {
-				name = TTR("Right Perspective");
+				name = TTR("Left Perspective");
 			}
 		} break;
 		case VIEW_TYPE_RIGHT: {
@@ -871,8 +854,8 @@ void Node3DEditorViewport::_update_name() {
 }
 
 void Node3DEditorViewport::_compute_edit(const Point2 &p_point) {
-	_edit.click_ray = _get_ray(Vector2(p_point.x, p_point.y));
-	_edit.click_ray_pos = _get_ray_pos(Vector2(p_point.x, p_point.y));
+	_edit.click_ray = _get_ray(p_point);
+	_edit.click_ray_pos = _get_ray_pos(p_point);
 	_edit.plane = TRANSFORM_VIEW;
 	spatial_editor->update_transform_gizmo();
 	_edit.center = spatial_editor->get_gizmo_transform().origin;
@@ -951,8 +934,8 @@ bool Node3DEditorViewport::_transform_gizmo_select(const Vector2 &p_screenpos, b
 		return false;
 	}
 
-	Vector3 ray_pos = _get_ray_pos(Vector2(p_screenpos.x, p_screenpos.y));
-	Vector3 ray = _get_ray(Vector2(p_screenpos.x, p_screenpos.y));
+	Vector3 ray_pos = _get_ray_pos(p_screenpos);
+	Vector3 ray = _get_ray(p_screenpos);
 
 	Transform3D gt = spatial_editor->get_gizmo_transform();
 
@@ -1015,7 +998,7 @@ bool Node3DEditorViewport::_transform_gizmo_select(const Vector2 &p_screenpos, b
 			} else {
 				//handle plane translate
 				_edit.mode = TRANSFORM_TRANSLATE;
-				_compute_edit(Point2(p_screenpos.x, p_screenpos.y));
+				_compute_edit(p_screenpos);
 				_edit.plane = TransformPlane(TRANSFORM_X_AXIS + col_axis + (is_plane_translate ? 3 : 0));
 			}
 			return true;
@@ -1053,7 +1036,7 @@ bool Node3DEditorViewport::_transform_gizmo_select(const Vector2 &p_screenpos, b
 			} else {
 				//handle rotate
 				_edit.mode = TRANSFORM_ROTATE;
-				_compute_edit(Point2(p_screenpos.x, p_screenpos.y));
+				_compute_edit(p_screenpos);
 				_edit.plane = TransformPlane(TRANSFORM_X_AXIS + col_axis);
 			}
 			return true;
@@ -1119,7 +1102,7 @@ bool Node3DEditorViewport::_transform_gizmo_select(const Vector2 &p_screenpos, b
 			} else {
 				//handle scale
 				_edit.mode = TRANSFORM_SCALE;
-				_compute_edit(Point2(p_screenpos.x, p_screenpos.y));
+				_compute_edit(p_screenpos);
 				_edit.plane = TransformPlane(TRANSFORM_X_AXIS + col_axis + (is_plane_scale ? 3 : 0));
 			}
 			return true;
@@ -4196,7 +4179,8 @@ Node3DEditorViewport::Node3DEditorViewport(Node3DEditor *p_spatial_editor, Edito
 
 	VBoxContainer *vbox = memnew(VBoxContainer);
 	surface->add_child(vbox);
-	vbox->set_position(Point2(10, 10) * EDSCALE);
+	vbox->set_offset(SIDE_LEFT, 10 * EDSCALE);
+	vbox->set_offset(SIDE_TOP, 10 * EDSCALE);
 
 	view_menu = memnew(MenuButton);
 	view_menu->set_flat(false);
@@ -4820,7 +4804,7 @@ void _update_all_gizmos(Node *p_node) {
 }
 
 void Node3DEditor::update_all_gizmos(Node *p_node) {
-	if (!p_node && get_tree()) {
+	if (!p_node && is_inside_tree()) {
 		p_node = get_tree()->get_edited_scene_root();
 	}
 
@@ -6030,7 +6014,7 @@ void fragment() {
 void Node3DEditor::_update_context_menu_stylebox() {
 	// This must be called when the theme changes to follow the new accent color.
 	Ref<StyleBoxFlat> context_menu_stylebox = memnew(StyleBoxFlat);
-	const Color accent_color = EditorNode::get_singleton()->get_gui_base()->get_theme_color("accent_color", "Editor");
+	const Color accent_color = EditorNode::get_singleton()->get_gui_base()->get_theme_color(SNAME("accent_color"), SNAME("Editor"));
 	context_menu_stylebox->set_bg_color(accent_color * Color(1, 1, 1, 0.1));
 	// Add an underline to the StyleBox, but prevent its minimum vertical size from changing.
 	context_menu_stylebox->set_border_color(accent_color);

@@ -790,12 +790,10 @@ void BaseMaterial3D::_update_shader() {
 			}
 		} break;
 		case BILLBOARD_FIXED_Y: {
-			code += "	MODELVIEW_MATRIX = INV_CAMERA_MATRIX * mat4(CAMERA_MATRIX[0],WORLD_MATRIX[1],vec4(normalize(cross(CAMERA_MATRIX[0].xyz,WORLD_MATRIX[1].xyz)), 0.0),WORLD_MATRIX[3]);\n";
+			code += "	MODELVIEW_MATRIX = INV_CAMERA_MATRIX * mat4(vec4(normalize(cross(vec3(0.0, 1.0, 0.0), CAMERA_MATRIX[2].xyz)),0.0),vec4(0.0, 1.0, 0.0, 0.0),vec4(normalize(cross(CAMERA_MATRIX[0].xyz, vec3(0.0, 1.0, 0.0))),0.0),WORLD_MATRIX[3]);\n";
 
 			if (flags[FLAG_BILLBOARD_KEEP_SCALE]) {
-				code += "	MODELVIEW_MATRIX = MODELVIEW_MATRIX * mat4(vec4(length(WORLD_MATRIX[0].xyz), 0.0, 0.0, 0.0),vec4(0.0, 1.0, 0.0, 0.0),vec4(0.0, 0.0, length(WORLD_MATRIX[2].xyz), 0.0), vec4(0.0, 0.0, 0.0, 1.0));\n";
-			} else {
-				code += "	MODELVIEW_MATRIX = MODELVIEW_MATRIX * mat4(vec4(1.0, 0.0, 0.0, 0.0),vec4(0.0, 1.0/length(WORLD_MATRIX[1].xyz), 0.0, 0.0), vec4(0.0, 0.0, 1.0, 0.0),vec4(0.0, 0.0, 0.0 ,1.0));\n";
+				code += "	MODELVIEW_MATRIX = MODELVIEW_MATRIX * mat4(vec4(length(WORLD_MATRIX[0].xyz), 0.0, 0.0, 0.0),vec4(0.0, length(WORLD_MATRIX[1].xyz), 0.0, 0.0),vec4(0.0, 0.0, length(WORLD_MATRIX[2].xyz), 0.0),vec4(0.0, 0.0, 0.0, 1.0));\n";
 			}
 		} break;
 		case BILLBOARD_PARTICLES: {
@@ -1303,7 +1301,7 @@ void BaseMaterial3D::flush_changes() {
 void BaseMaterial3D::_queue_shader_change() {
 	MutexLock lock(material_mutex);
 
-	if (!element.in_list()) {
+	if (is_initialized && !element.in_list()) {
 		dirty_materials->add(&element);
 	}
 }
@@ -2779,6 +2777,7 @@ BaseMaterial3D::BaseMaterial3D(bool p_orm) :
 
 	flags[FLAG_USE_TEXTURE_REPEAT] = true;
 
+	is_initialized = true;
 	_queue_shader_change();
 }
 
