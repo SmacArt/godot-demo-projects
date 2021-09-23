@@ -31,6 +31,8 @@ public:
 	void set_description(String description);
 	void set_image(String image_path);
 	String get_image();
+	void set_color(Color color);
+	Color get_color();
   void set_scene(String scene_path);
   String get_scene();
 
@@ -39,8 +41,9 @@ private:
 	String id;
 	String title;
 	String description;
-	String scene;
 	String image;
+  Color color;
+	String scene;
 
 };
 

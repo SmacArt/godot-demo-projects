@@ -22,12 +22,15 @@ void SmetchContent::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_scene"), &SmetchContent::set_scene);
 	ClassDB::bind_method(D_METHOD("get_image"), &SmetchContent::get_image);
 	ClassDB::bind_method(D_METHOD("set_image"), &SmetchContent::set_image);
+	ClassDB::bind_method(D_METHOD("get_color"), &SmetchContent::get_color);
+	ClassDB::bind_method(D_METHOD("set_color"), &SmetchContent::set_color);
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "type", PROPERTY_HINT_ENUM, "Root,Module,Chapter,Section,Smetch"), "set_type", "get_type");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "id"), "set_id", "get_id");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "title"), "set_title", "get_title");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "description"), "set_description", "get_description");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "image", PROPERTY_HINT_FILE, "*.png"), "set_image", "get_image");
+	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "color", PROPERTY_HINT_COLOR_NO_ALPHA), "set_color", "get_color");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "scene", PROPERTY_HINT_FILE, "*.tscn"), "set_scene", "get_scene");
 }
 
@@ -69,6 +72,13 @@ String SmetchContent::get_image() {
 void SmetchContent::set_image(String p_image) {
 	image = p_image;
 }
+Color SmetchContent::get_color() {
+	return color;
+}
+void SmetchContent::set_color(Color p_color) {
+	color = p_color;
+}
+
 
 String SmetchContent::get_scene() {
 	return scene;
