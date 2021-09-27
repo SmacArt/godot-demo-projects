@@ -88,9 +88,9 @@ static String _get_var_type(const Variant *p_var) {
 		Object *bobj = p_var->get_validated_object_with_check(was_freed);
 		if (!bobj) {
 			if (was_freed) {
-				basestr = "null instance";
-			} else {
 				basestr = "previously freed";
+			} else {
+				basestr = "null instance";
 			}
 		} else {
 			basestr = bobj->get_class();
@@ -1233,7 +1233,7 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				GD_ERR_BREAK(to_type < 0 || to_type >= Variant::VARIANT_MAX);
 
 #ifdef DEBUG_ENABLED
-				if (src->get_type() == Variant::OBJECT && !src->operator ObjectID().is_ref_counted() && ObjectDB::get_instance(src->operator ObjectID()) == nullptr) {
+				if (src->operator Object *() && !src->get_validated_object()) {
 					err_text = "Trying to cast a freed object.";
 					OPCODE_BREAK;
 				}
@@ -1263,7 +1263,7 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				GD_ERR_BREAK(!nc);
 
 #ifdef DEBUG_ENABLED
-				if (src->get_type() == Variant::OBJECT && !src->operator ObjectID().is_ref_counted() && ObjectDB::get_instance(src->operator ObjectID()) == nullptr) {
+				if (src->operator Object *() && !src->get_validated_object()) {
 					err_text = "Trying to cast a freed object.";
 					OPCODE_BREAK;
 				}
@@ -1295,7 +1295,7 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				GD_ERR_BREAK(!base_type);
 
 #ifdef DEBUG_ENABLED
-				if (src->get_type() == Variant::OBJECT && !src->operator ObjectID().is_ref_counted() && ObjectDB::get_instance(src->operator ObjectID()) == nullptr) {
+				if (src->operator Object *() && !src->get_validated_object()) {
 					err_text = "Trying to cast a freed object.";
 					OPCODE_BREAK;
 				}
@@ -2138,7 +2138,7 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 
 					retvalue = gdfs;
 
-					Error err = sig.connect(Callable(gdfs.ptr(), "_signal_callback"), varray(gdfs), Object::CONNECT_ONESHOT);
+					Error err = sig.connect(callable_bind(Callable(gdfs.ptr(), "_signal_callback"), retvalue), Object::CONNECT_ONESHOT);
 					if (err != OK) {
 						err_text = "Error connecting to signal: " + sig.get_name() + " during await.";
 						OPCODE_BREAK;

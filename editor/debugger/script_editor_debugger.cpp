@@ -147,7 +147,7 @@ void ScriptEditorDebugger::update_tabs() {
 }
 
 void ScriptEditorDebugger::clear_style() {
-	tabs->add_theme_style_override("panel", nullptr);
+	tabs->remove_theme_style_override("panel");
 }
 
 void ScriptEditorDebugger::save_node(ObjectID p_id, const String &p_file) {
@@ -500,6 +500,10 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 		error->set_icon(0, get_theme_icon(oe.warning ? "Warning" : "Error", "EditorIcons"));
 		error->set_text(0, time);
 		error->set_text_align(0, TreeItem::ALIGN_LEFT);
+
+		const Color color = get_theme_color(oe.warning ? SNAME("warning_color") : SNAME("error_color"), SNAME("Editor"));
+		error->set_custom_color(0, color);
+		error->set_custom_color(1, color);
 
 		String error_title;
 		if (oe.callstack.size() > 0) {
