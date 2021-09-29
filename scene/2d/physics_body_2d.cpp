@@ -34,8 +34,8 @@
 #include "scene/scene_string_names.h"
 
 void PhysicsBody2D::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("move_and_collide", "rel_vec", "test_only", "safe_margin"), &PhysicsBody2D::_move, DEFVAL(false), DEFVAL(0.08));
-	ClassDB::bind_method(D_METHOD("test_move", "from", "rel_vec", "collision", "safe_margin"), &PhysicsBody2D::test_move, DEFVAL(Variant()), DEFVAL(0.08));
+	ClassDB::bind_method(D_METHOD("move_and_collide", "linear_velocity", "test_only", "safe_margin"), &PhysicsBody2D::_move, DEFVAL(false), DEFVAL(0.08));
+	ClassDB::bind_method(D_METHOD("test_move", "from", "linear_velocity", "collision", "safe_margin"), &PhysicsBody2D::test_move, DEFVAL(Variant()), DEFVAL(0.08));
 
 	ClassDB::bind_method(D_METHOD("get_collision_exceptions"), &PhysicsBody2D::get_collision_exceptions);
 	ClassDB::bind_method(D_METHOD("add_collision_exception_with", "body"), &PhysicsBody2D::add_collision_exception_with);
@@ -57,7 +57,10 @@ PhysicsBody2D::~PhysicsBody2D() {
 Ref<KinematicCollision2D> PhysicsBody2D::_move(const Vector2 &p_motion, bool p_test_only, real_t p_margin) {
 	PhysicsServer2D::MotionResult result;
 
-	if (move_and_collide(p_motion, result, p_margin, p_test_only)) {
+	// Hack in order to work with calling from _process as well as from _physics_process; calling from thread is risky.
+	double delta = Engine::get_singleton()->is_in_physics_frame() ? get_physics_process_delta_time() : get_process_delta_time();
+
+	if (move_and_collide(p_motion * delta, result, p_margin, p_test_only)) {
 		// Create a new instance when the cached reference is invalid or still in use in script.
 		if (motion_cache.is_null() || motion_cache->reference_get_count() > 1) {
 			motion_cache.instantiate();
@@ -133,7 +136,10 @@ bool PhysicsBody2D::test_move(const Transform2D &p_from, const Vector2 &p_motion
 		r = const_cast<PhysicsServer2D::MotionResult *>(&r_collision->result);
 	}
 
-	return PhysicsServer2D::get_singleton()->body_test_motion(get_rid(), p_from, p_motion, p_margin, r);
+	// Hack in order to work with calling from _process as well as from _physics_process; calling from thread is risky.
+	double delta = Engine::get_singleton()->is_in_physics_frame() ? get_physics_process_delta_time() : get_process_delta_time();
+
+	return PhysicsServer2D::get_singleton()->body_test_motion(get_rid(), p_from, p_motion * delta, p_margin, r);
 }
 
 TypedArray<PhysicsBody2D> PhysicsBody2D::get_collision_exceptions() {
@@ -430,7 +436,7 @@ void RigidDynamicBody2D::_body_state_changed_callback(void *p_instance, PhysicsD
 
 void RigidDynamicBody2D::_body_state_changed(PhysicsDirectBodyState2D *p_state) {
 	set_block_transform_notify(true); // don't want notify (would feedback loop)
-	if (mode != MODE_KINEMATIC) {
+	if (!freeze || freeze_mode != FREEZE_MODE_KINEMATIC) {
 		set_global_transform(p_state->get_transform());
 	}
 
@@ -524,29 +530,60 @@ void RigidDynamicBody2D::_body_state_changed(PhysicsDirectBodyState2D *p_state) 
 	}
 }
 
-void RigidDynamicBody2D::set_mode(Mode p_mode) {
-	mode = p_mode;
-	switch (p_mode) {
-		case MODE_DYNAMIC: {
-			set_body_mode(PhysicsServer2D::BODY_MODE_DYNAMIC);
-		} break;
-		case MODE_STATIC: {
-			set_body_mode(PhysicsServer2D::BODY_MODE_STATIC);
-
-		} break;
-		case MODE_KINEMATIC: {
-			set_body_mode(PhysicsServer2D::BODY_MODE_KINEMATIC);
-
-		} break;
-		case MODE_DYNAMIC_LOCKED: {
-			set_body_mode(PhysicsServer2D::BODY_MODE_DYNAMIC_LOCKED);
-
-		} break;
+void RigidDynamicBody2D::_apply_body_mode() {
+	if (freeze) {
+		switch (freeze_mode) {
+			case FREEZE_MODE_STATIC: {
+				set_body_mode(PhysicsServer2D::BODY_MODE_STATIC);
+			} break;
+			case FREEZE_MODE_KINEMATIC: {
+				set_body_mode(PhysicsServer2D::BODY_MODE_KINEMATIC);
+			} break;
+		}
+	} else if (lock_rotation) {
+		set_body_mode(PhysicsServer2D::BODY_MODE_DYNAMIC_LINEAR);
+	} else {
+		set_body_mode(PhysicsServer2D::BODY_MODE_DYNAMIC);
 	}
 }
 
-RigidDynamicBody2D::Mode RigidDynamicBody2D::get_mode() const {
-	return mode;
+void RigidDynamicBody2D::set_lock_rotation_enabled(bool p_lock_rotation) {
+	if (p_lock_rotation == lock_rotation) {
+		return;
+	}
+
+	lock_rotation = p_lock_rotation;
+	_apply_body_mode();
+}
+
+bool RigidDynamicBody2D::is_lock_rotation_enabled() const {
+	return lock_rotation;
+}
+
+void RigidDynamicBody2D::set_freeze_enabled(bool p_freeze) {
+	if (p_freeze == freeze) {
+		return;
+	}
+
+	freeze = p_freeze;
+	_apply_body_mode();
+}
+
+bool RigidDynamicBody2D::is_freeze_enabled() const {
+	return freeze;
+}
+
+void RigidDynamicBody2D::set_freeze_mode(FreezeMode p_freeze_mode) {
+	if (p_freeze_mode == freeze_mode) {
+		return;
+	}
+
+	freeze_mode = p_freeze_mode;
+	_apply_body_mode();
+}
+
+RigidDynamicBody2D::FreezeMode RigidDynamicBody2D::get_freeze_mode() const {
+	return freeze_mode;
 }
 
 void RigidDynamicBody2D::set_mass(real_t p_mass) {
@@ -844,17 +881,14 @@ TypedArray<String> RigidDynamicBody2D::get_configuration_warnings() const {
 
 	TypedArray<String> warnings = CollisionObject2D::get_configuration_warnings();
 
-	if ((get_mode() == MODE_DYNAMIC || get_mode() == MODE_DYNAMIC_LOCKED) && (ABS(t.elements[0].length() - 1.0) > 0.05 || ABS(t.elements[1].length() - 1.0) > 0.05)) {
-		warnings.push_back(TTR("Size changes to RigidDynamicBody2D (in dynamic modes) will be overridden by the physics engine when running.\nChange the size in children collision shapes instead."));
+	if (ABS(t.elements[0].length() - 1.0) > 0.05 || ABS(t.elements[1].length() - 1.0) > 0.05) {
+		warnings.push_back(TTR("Size changes to RigidDynamicBody2D will be overridden by the physics engine when running.\nChange the size in children collision shapes instead."));
 	}
 
 	return warnings;
 }
 
 void RigidDynamicBody2D::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_mode", "mode"), &RigidDynamicBody2D::set_mode);
-	ClassDB::bind_method(D_METHOD("get_mode"), &RigidDynamicBody2D::get_mode);
-
 	ClassDB::bind_method(D_METHOD("set_mass", "mass"), &RigidDynamicBody2D::set_mass);
 	ClassDB::bind_method(D_METHOD("get_mass"), &RigidDynamicBody2D::get_mass);
 
@@ -918,11 +952,19 @@ void RigidDynamicBody2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_can_sleep", "able_to_sleep"), &RigidDynamicBody2D::set_can_sleep);
 	ClassDB::bind_method(D_METHOD("is_able_to_sleep"), &RigidDynamicBody2D::is_able_to_sleep);
 
+	ClassDB::bind_method(D_METHOD("set_lock_rotation_enabled", "lock_rotation"), &RigidDynamicBody2D::set_lock_rotation_enabled);
+	ClassDB::bind_method(D_METHOD("is_lock_rotation_enabled"), &RigidDynamicBody2D::is_lock_rotation_enabled);
+
+	ClassDB::bind_method(D_METHOD("set_freeze_enabled", "freeze_mode"), &RigidDynamicBody2D::set_freeze_enabled);
+	ClassDB::bind_method(D_METHOD("is_freeze_enabled"), &RigidDynamicBody2D::is_freeze_enabled);
+
+	ClassDB::bind_method(D_METHOD("set_freeze_mode", "freeze_mode"), &RigidDynamicBody2D::set_freeze_mode);
+	ClassDB::bind_method(D_METHOD("get_freeze_mode"), &RigidDynamicBody2D::get_freeze_mode);
+
 	ClassDB::bind_method(D_METHOD("get_colliding_bodies"), &RigidDynamicBody2D::get_colliding_bodies);
 
 	GDVIRTUAL_BIND(_integrate_forces, "state");
 
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "mode", PROPERTY_HINT_ENUM, "Dynamic,Static,DynamicLocked,Kinematic"), "set_mode", "get_mode");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mass", PROPERTY_HINT_RANGE, "0.01,1000,0.01,or_greater,exp"), "set_mass", "get_mass");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia", PROPERTY_HINT_RANGE, "0,1000,0.01,or_greater,exp"), "set_inertia", "get_inertia");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "center_of_mass_mode", PROPERTY_HINT_ENUM, "Auto,Custom", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_UPDATE_ALL_IF_MODIFIED), "set_center_of_mass_mode", "get_center_of_mass_mode");
@@ -936,6 +978,9 @@ void RigidDynamicBody2D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "contact_monitor"), "set_contact_monitor", "is_contact_monitor_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "sleeping"), "set_sleeping", "is_sleeping");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "can_sleep"), "set_can_sleep", "is_able_to_sleep");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "lock_rotation"), "set_lock_rotation_enabled", "is_lock_rotation_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "freeze"), "set_freeze_enabled", "is_freeze_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "freeze_mode", PROPERTY_HINT_ENUM, "Static,Kinematic"), "set_freeze_mode", "get_freeze_mode");
 	ADD_GROUP("Linear", "linear_");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "linear_velocity"), "set_linear_velocity", "get_linear_velocity");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "linear_damp", PROPERTY_HINT_RANGE, "-1,100,0.001,or_greater"), "set_linear_damp", "get_linear_damp");
@@ -952,10 +997,8 @@ void RigidDynamicBody2D::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("body_exited", PropertyInfo(Variant::OBJECT, "body", PROPERTY_HINT_RESOURCE_TYPE, "Node")));
 	ADD_SIGNAL(MethodInfo("sleeping_state_changed"));
 
-	BIND_ENUM_CONSTANT(MODE_DYNAMIC);
-	BIND_ENUM_CONSTANT(MODE_STATIC);
-	BIND_ENUM_CONSTANT(MODE_DYNAMIC_LOCKED);
-	BIND_ENUM_CONSTANT(MODE_KINEMATIC);
+	BIND_ENUM_CONSTANT(FREEZE_MODE_STATIC);
+	BIND_ENUM_CONSTANT(FREEZE_MODE_KINEMATIC);
 
 	BIND_ENUM_CONSTANT(CENTER_OF_MASS_MODE_AUTO);
 	BIND_ENUM_CONSTANT(CENTER_OF_MASS_MODE_CUSTOM);
@@ -1090,9 +1133,7 @@ void CharacterBody2D::_move_and_slide_grounded(double p_delta, bool p_was_on_flo
 
 			if (on_floor && floor_stop_on_slope && (linear_velocity.normalized() + up_direction).length() < 0.01) {
 				Transform2D gt = get_global_transform();
-				if (result.travel.length() > margin) {
-					gt.elements[2] -= result.travel.slide(up_direction);
-				} else {
+				if (result.travel.length() <= margin + CMP_EPSILON) {
 					gt.elements[2] -= result.travel;
 				}
 				set_global_transform(gt);
@@ -1111,7 +1152,7 @@ void CharacterBody2D::_move_and_slide_grounded(double p_delta, bool p_was_on_flo
 				// Avoid to move forward on a wall if floor_block_on_wall is true.
 				if (p_was_on_floor && !on_floor && !vel_dir_facing_up) {
 					// If the movement is large the body can be prevented from reaching the walls.
-					if (result.travel.length() <= margin) {
+					if (result.travel.length() <= margin + CMP_EPSILON) {
 						// Cancels the motion.
 						Transform2D gt = get_global_transform();
 						gt.elements[2] -= result.travel;
@@ -1240,13 +1281,16 @@ void CharacterBody2D::_move_and_slide_free(double p_delta) {
 }
 
 void CharacterBody2D::_snap_on_floor(bool was_on_floor, bool vel_dir_facing_up) {
-	if (Math::is_equal_approx(floor_snap_length, 0) || on_floor || !was_on_floor || vel_dir_facing_up) {
+	if (on_floor || !was_on_floor || vel_dir_facing_up) {
 		return;
 	}
 
+	// Snap by at least collision margin to keep floor state consistent.
+	real_t length = MAX(floor_snap_length, margin);
+
 	Transform2D gt = get_global_transform();
 	PhysicsServer2D::MotionResult result;
-	if (move_and_collide(up_direction * -floor_snap_length, result, margin, true, false, true)) {
+	if (move_and_collide(-up_direction * length, result, margin, true, false, true)) {
 		bool apply = true;
 		if (result.get_angle(up_direction) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD) {
 			on_floor = true;
@@ -1274,12 +1318,15 @@ void CharacterBody2D::_snap_on_floor(bool was_on_floor, bool vel_dir_facing_up) 
 }
 
 bool CharacterBody2D::_on_floor_if_snapped(bool was_on_floor, bool vel_dir_facing_up) {
-	if (Math::is_equal_approx(floor_snap_length, 0) || up_direction == Vector2() || on_floor || !was_on_floor || vel_dir_facing_up) {
+	if (up_direction == Vector2() || on_floor || !was_on_floor || vel_dir_facing_up) {
 		return false;
 	}
 
+	// Snap by at least collision margin to keep floor state consistent.
+	real_t length = MAX(floor_snap_length, margin);
+
 	PhysicsServer2D::MotionResult result;
-	if (move_and_collide(up_direction * -floor_snap_length, result, margin, true, false, true)) {
+	if (move_and_collide(-up_direction * length, result, margin, true, false, true)) {
 		if (result.get_angle(up_direction) <= floor_max_angle + FLOOR_ANGLE_THRESHOLD) {
 			return true;
 		}
@@ -1568,7 +1615,7 @@ void CharacterBody2D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "floor_constant_speed"), "set_floor_constant_speed_enabled", "is_floor_constant_speed_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "floor_block_on_wall"), "set_floor_block_on_wall_enabled", "is_floor_block_on_wall_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "floor_max_angle", PROPERTY_HINT_RANGE, "0,180,0.1,radians"), "set_floor_max_angle", "get_floor_max_angle");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "floor_snap_length", PROPERTY_HINT_RANGE, "0,1000,0.1"), "set_floor_snap_length", "get_floor_snap_length");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "floor_snap_length", PROPERTY_HINT_RANGE, "0,32,0.1,or_greater"), "set_floor_snap_length", "get_floor_snap_length");
 	ADD_GROUP("Moving platform", "moving_platform");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "moving_platform_floor_layers", PROPERTY_HINT_LAYERS_2D_PHYSICS), "set_moving_platform_floor_layers", "get_moving_platform_floor_layers");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "moving_platform_wall_layers", PROPERTY_HINT_LAYERS_2D_PHYSICS), "set_moving_platform_wall_layers", "get_moving_platform_wall_layers");

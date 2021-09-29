@@ -271,7 +271,6 @@ public:
 		SPACE_PARAM_BODY_TIME_TO_SLEEP,
 		SPACE_PARAM_BODY_ANGULAR_VELOCITY_DAMP_RATIO,
 		SPACE_PARAM_CONSTRAINT_DEFAULT_BIAS,
-		SPACE_PARAM_TEST_MOTION_MIN_CONTACT_DEPTH
 	};
 
 	virtual void space_set_param(RID p_space, SpaceParameter p_param, real_t p_value) = 0;
@@ -361,7 +360,7 @@ public:
 		BODY_MODE_STATIC,
 		BODY_MODE_KINEMATIC,
 		BODY_MODE_DYNAMIC,
-		BODY_MODE_DYNAMIC_LOCKED,
+		BODY_MODE_DYNAMIC_LINEAR,
 	};
 
 	virtual RID body_create() = 0;
