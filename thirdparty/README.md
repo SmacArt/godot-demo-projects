@@ -20,13 +20,15 @@ Files extracted from upstream source:
 ## bullet
 
 - Upstream: https://github.com/bulletphysics/bullet3
-- Version: 3.08 (df09fd9ed37e365ceae884ca7f620b61607dae2e, 2020)
+- Version: 3.17 (ebe1916b90acae8b13cd8c6b637d8327cdc64e94, 2021)
 - License: zlib
 
 Files extracted from upstream source:
 
-- src/* apart from CMakeLists.txt and premake4.lua files
-- LICENSE.txt
+- `src/*` apart from CMakeLists.txt and premake4.lua files
+- `LICENSE.txt`, and `VERSION` as `VERSION.txt`
+
+Includes a warning fix which should be upstreamed soon (see patch in `patches`).
 
 
 ## certs
@@ -371,7 +373,9 @@ Files extracted from upstream repository:
 - `LICENSE.md`.
 
 An [experimental upstream feature](https://github.com/zeux/meshoptimizer/tree/simplify-attr),
-has been backported, see patch in `patches` directory.
+has been backported. On top of that, it was modified to report only distance error metrics 
+instead of a combination of distance and attribute errors. Patches for both changes can be
+found in the `patches` directory.
 
 
 ## miniupnpc

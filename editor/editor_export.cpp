@@ -451,6 +451,9 @@ void EditorExportPlatform::_export_find_resources(EditorFileSystemDirectory *p_d
 	}
 
 	for (int i = 0; i < p_dir->get_file_count(); i++) {
+		if (p_dir->get_file_type(i) == "TextFile") {
+			continue;
+		}
 		p_paths.insert(p_dir->get_file_path(i));
 	}
 }
@@ -1814,9 +1817,9 @@ bool EditorExportPlatformPC::can_export(const Ref<EditorExportPreset> &p_preset,
 
 List<String> EditorExportPlatformPC::get_binary_extensions(const Ref<EditorExportPreset> &p_preset) const {
 	List<String> list;
-	for (Map<String, String>::Element *E = extensions.front(); E; E = E->next()) {
-		if (p_preset->get(E->key())) {
-			list.push_back(extensions[E->key()]);
+	for (const KeyValue<String, String> &E : extensions) {
+		if (p_preset->get(E.key)) {
+			list.push_back(extensions[E.key]);
 			return list;
 		}
 	}

@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  register_types.h                                                     */
+/*  search_array.h                                                       */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,10 +28,40 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef TEXT_REGISTER_TYPES_H
-#define TEXT_REGISTER_TYPES_H
+#ifndef SEARCH_ARRAY_H
+#define SEARCH_ARRAY_H
 
-void register_text_server_gdn_types();
-void unregister_text_server_gdn_types();
+#include <core/templates/sort_array.h>
 
-#endif // TEXT_REGISTER_TYPES_H
+template <class T, class Comparator = _DefaultComparator<T>>
+class SearchArray {
+public:
+	Comparator compare;
+
+	inline int bisect(const T *p_array, int p_len, const T &p_value, bool p_before) const {
+		int lo = 0;
+		int hi = p_len;
+		if (p_before) {
+			while (lo < hi) {
+				const int mid = (lo + hi) / 2;
+				if (compare(p_array[mid], p_value)) {
+					lo = mid + 1;
+				} else {
+					hi = mid;
+				}
+			}
+		} else {
+			while (lo < hi) {
+				const int mid = (lo + hi) / 2;
+				if (compare(p_value, p_array[mid])) {
+					hi = mid;
+				} else {
+					lo = mid + 1;
+				}
+			}
+		}
+		return lo;
+	}
+};
+
+#endif // SEARCH_ARRAY_H

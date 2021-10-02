@@ -328,8 +328,8 @@ public:
 	};
 	bool move_and_slide();
 
-	virtual Vector3 get_linear_velocity() const override;
-	void set_linear_velocity(const Vector3 &p_velocity);
+	const Vector3 &get_motion_velocity() const;
+	void set_motion_velocity(const Vector3 &p_velocity);
 
 	bool is_on_floor() const;
 	bool is_on_floor_only() const;
@@ -337,13 +337,15 @@ public:
 	bool is_on_wall_only() const;
 	bool is_on_ceiling() const;
 	bool is_on_ceiling_only() const;
-	Vector3 get_last_motion() const;
+	const Vector3 &get_last_motion() const;
 	Vector3 get_position_delta() const;
-	Vector3 get_floor_normal() const;
-	Vector3 get_wall_normal() const;
-	Vector3 get_real_velocity() const;
+	const Vector3 &get_floor_normal() const;
+	const Vector3 &get_wall_normal() const;
+	const Vector3 &get_real_velocity() const;
 	real_t get_floor_angle(const Vector3 &p_up_direction = Vector3(0.0, 1.0, 0.0)) const;
-	Vector3 get_platform_velocity() const;
+	const Vector3 &get_platform_velocity() const;
+
+	virtual Vector3 get_linear_velocity() const override;
 
 	int get_slide_collision_count() const;
 	PhysicsServer3D::MotionResult get_slide_collision(int p_bounce) const;
@@ -379,7 +381,7 @@ private:
 	bool floor_block_on_wall = true;
 	bool slide_on_ceiling = true;
 	int max_slides = 6;
-	int platform_layer;
+	int platform_layer = 0;
 	RID platform_rid;
 	uint32_t moving_platform_floor_layers = UINT32_MAX;
 	uint32_t moving_platform_wall_layers = 0;
@@ -387,11 +389,13 @@ private:
 	real_t floor_max_angle = Math::deg2rad((real_t)45.0);
 	real_t wall_min_slide_angle = Math::deg2rad((real_t)15.0);
 	Vector3 up_direction = Vector3(0.0, 1.0, 0.0);
-	Vector3 linear_velocity;
+	Vector3 motion_velocity;
 	Vector3 floor_normal;
 	Vector3 wall_normal;
+	Vector3 ceiling_normal;
 	Vector3 last_motion;
 	Vector3 platform_velocity;
+	Vector3 platform_ceiling_velocity;
 	Vector3 previous_position;
 	Vector3 real_velocity;
 
@@ -483,7 +487,6 @@ public:
 	Object *get_collider_shape(int p_collision_index = 0) const;
 	int get_collider_shape_index(int p_collision_index = 0) const;
 	Vector3 get_collider_velocity(int p_collision_index = 0) const;
-	Variant get_collider_metadata(int p_collision_index = 0) const;
 
 	Vector3 get_best_position() const;
 	Vector3 get_best_normal() const;
@@ -494,7 +497,6 @@ public:
 	Object *get_best_collider_shape() const;
 	int get_best_collider_shape_index() const;
 	Vector3 get_best_collider_velocity() const;
-	Variant get_best_collider_metadata() const;
 };
 
 class PhysicalBone3D : public PhysicsBody3D {
@@ -662,10 +664,9 @@ private:
 
 public:
 	void _on_bone_parent_changed();
-	void _set_gizmo_move_joint(bool p_move_joint);
 
-public:
 #ifdef TOOLS_ENABLED
+	void _set_gizmo_move_joint(bool p_move_joint);
 	virtual Transform3D get_global_gizmo_transform() const override;
 	virtual Transform3D get_local_gizmo_transform() const override;
 #endif

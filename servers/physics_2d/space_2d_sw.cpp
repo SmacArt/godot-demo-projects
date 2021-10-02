@@ -105,7 +105,6 @@ int PhysicsDirectSpaceState2DSW::_intersect_point_impl(const Vector2 &p_point, S
 		}
 		r_results[cc].rid = col_obj->get_self();
 		r_results[cc].shape = shape_idx;
-		r_results[cc].metadata = col_obj->get_shape_metadata(shape_idx);
 
 		cc++;
 	}
@@ -193,7 +192,6 @@ bool PhysicsDirectSpaceState2DSW::intersect_ray(const Vector2 &p_from, const Vec
 		r_result.collider = ObjectDB::get_instance(r_result.collider_id);
 	}
 	r_result.normal = res_normal;
-	r_result.metadata = res_obj->get_shape_metadata(res_shape);
 	r_result.position = res_point;
 	r_result.rid = res_obj->get_self();
 	r_result.shape = res_shape;
@@ -206,7 +204,7 @@ int PhysicsDirectSpaceState2DSW::intersect_shape(const RID &p_shape, const Trans
 		return 0;
 	}
 
-	Shape2DSW *shape = PhysicsServer2DSW::singletonsw->shape_owner.getornull(p_shape);
+	Shape2DSW *shape = PhysicsServer2DSW::singletonsw->shape_owner.get_or_null(p_shape);
 	ERR_FAIL_COND_V(!shape, 0);
 
 	Rect2 aabb = p_xform.xform(shape->get_aabb());
@@ -242,7 +240,6 @@ int PhysicsDirectSpaceState2DSW::intersect_shape(const RID &p_shape, const Trans
 		}
 		r_results[cc].rid = col_obj->get_self();
 		r_results[cc].shape = shape_idx;
-		r_results[cc].metadata = col_obj->get_shape_metadata(shape_idx);
 
 		cc++;
 	}
@@ -251,7 +248,7 @@ int PhysicsDirectSpaceState2DSW::intersect_shape(const RID &p_shape, const Trans
 }
 
 bool PhysicsDirectSpaceState2DSW::cast_motion(const RID &p_shape, const Transform2D &p_xform, const Vector2 &p_motion, real_t p_margin, real_t &p_closest_safe, real_t &p_closest_unsafe, const Set<RID> &p_exclude, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas) {
-	Shape2DSW *shape = PhysicsServer2DSW::singletonsw->shape_owner.getornull(p_shape);
+	Shape2DSW *shape = PhysicsServer2DSW::singletonsw->shape_owner.get_or_null(p_shape);
 	ERR_FAIL_COND_V(!shape, false);
 
 	Rect2 aabb = p_xform.xform(shape->get_aabb());
@@ -338,7 +335,7 @@ bool PhysicsDirectSpaceState2DSW::collide_shape(RID p_shape, const Transform2D &
 		return false;
 	}
 
-	Shape2DSW *shape = PhysicsServer2DSW::singletonsw->shape_owner.getornull(p_shape);
+	Shape2DSW *shape = PhysicsServer2DSW::singletonsw->shape_owner.get_or_null(p_shape);
 	ERR_FAIL_COND_V(!shape, 0);
 
 	Rect2 aabb = p_shape_xform.xform(shape->get_aabb());
@@ -435,7 +432,7 @@ static void _rest_cbk_result(const Vector2 &p_point_A, const Vector2 &p_point_B,
 }
 
 bool PhysicsDirectSpaceState2DSW::rest_info(RID p_shape, const Transform2D &p_shape_xform, const Vector2 &p_motion, real_t p_margin, ShapeRestInfo *r_info, const Set<RID> &p_exclude, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas) {
-	Shape2DSW *shape = PhysicsServer2DSW::singletonsw->shape_owner.getornull(p_shape);
+	Shape2DSW *shape = PhysicsServer2DSW::singletonsw->shape_owner.get_or_null(p_shape);
 	ERR_FAIL_COND_V(!shape, 0);
 
 	real_t min_contact_depth = p_margin * TEST_MOTION_MIN_CONTACT_DEPTH_FACTOR;
@@ -484,7 +481,6 @@ bool PhysicsDirectSpaceState2DSW::rest_info(RID p_shape, const Transform2D &p_sh
 	r_info->normal = rcd.best_normal;
 	r_info->point = rcd.best_contact;
 	r_info->rid = rcd.best_object->get_self();
-	r_info->metadata = rcd.best_object->get_shape_metadata(rcd.best_shape);
 	if (rcd.best_object->get_type() == CollisionObject2DSW::TYPE_BODY) {
 		const Body2DSW *body = static_cast<const Body2DSW *>(rcd.best_object);
 		Vector2 rel_vec = r_info->point - (body->get_transform().get_origin() + body->get_center_of_mass());
@@ -961,7 +957,6 @@ bool Space2DSW::test_body_motion(Body2DSW *p_body, const Transform2D &p_from, co
 				r_result->collision_depth = rcd.best_len;
 				r_result->collision_safe_fraction = safe;
 				r_result->collision_unsafe_fraction = unsafe;
-				r_result->collider_metadata = rcd.best_object->get_shape_metadata(rcd.best_shape);
 
 				const Body2DSW *body = static_cast<const Body2DSW *>(rcd.best_object);
 				Vector2 rel_vec = r_result->collision_point - (body->get_transform().get_origin() + body->get_center_of_mass());

@@ -43,13 +43,13 @@
 #include "scene/3d/decal.h"
 #include "scene/3d/gpu_particles_3d.h"
 #include "scene/3d/gpu_particles_collision_3d.h"
+#include "scene/3d/joint_3d.h"
 #include "scene/3d/light_3d.h"
 #include "scene/3d/lightmap_gi.h"
 #include "scene/3d/lightmap_probe.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/navigation_region_3d.h"
 #include "scene/3d/occluder_instance_3d.h"
-#include "scene/3d/physics_joint_3d.h"
 #include "scene/3d/position_3d.h"
 #include "scene/3d/ray_cast_3d.h"
 #include "scene/3d/reflection_probe.h"
@@ -4773,10 +4773,10 @@ void NavigationRegion3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	}
 	Vector<Vector3> lines;
 
-	for (Map<_EdgeKey, bool>::Element *E = edge_map.front(); E; E = E->next()) {
-		if (E->get()) {
-			lines.push_back(E->key().from);
-			lines.push_back(E->key().to);
+	for (const KeyValue<_EdgeKey, bool> &E : edge_map) {
+		if (E.value) {
+			lines.push_back(E.key.from);
+			lines.push_back(E.key.to);
 		}
 	}
 

@@ -2270,10 +2270,10 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool is_awa
 
 	if (get_function_signature(p_call, base_type, p_call->function_name, return_type, par_types, default_arg_count, is_static, is_vararg)) {
 		// If the function require typed arrays we must make literals be typed.
-		for (Map<int, GDScriptParser::ArrayNode *>::Element *E = arrays.front(); E; E = E->next()) {
-			int index = E->key();
+		for (const KeyValue<int, GDScriptParser::ArrayNode *> &E : arrays) {
+			int index = E.key;
 			if (index < par_types.size() && par_types[index].has_container_element_type()) {
-				update_array_literal_element_type(par_types[index], E->get());
+				update_array_literal_element_type(par_types[index], E.value);
 			}
 		}
 		validate_call_arg(par_types, default_arg_count, is_vararg, p_call);
@@ -2508,7 +2508,10 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 				result.enum_type = name;
 				p_identifier->set_datatype(result);
 			} else {
-				push_error(vformat(R"(Cannot find value "%s" in "%s".)", name, base.to_string()), p_identifier);
+				// Consider as a Dictionary
+				GDScriptParser::DataType dummy;
+				dummy.kind = GDScriptParser::DataType::VARIANT;
+				p_identifier->set_datatype(dummy);
 			}
 		} else {
 			push_error(R"(Cannot get property from enum value.)", p_identifier);
@@ -3680,6 +3683,11 @@ bool GDScriptAnalyzer::is_type_compatible(const GDScriptParser::DataType &p_targ
 	if (p_target.kind == GDScriptParser::DataType::ENUM) {
 		if (p_source.kind == GDScriptParser::DataType::BUILTIN && p_source.builtin_type == Variant::INT) {
 			return true;
+		}
+		if (p_source.kind == GDScriptParser::DataType::ENUM) {
+			if (p_source.native_type == p_target.native_type) {
+				return true;
+			}
 		}
 		if (p_source.kind == GDScriptParser::DataType::ENUM_VALUE) {
 			if (p_source.native_type == p_target.native_type && p_target.enum_values.has(p_source.enum_type)) {
