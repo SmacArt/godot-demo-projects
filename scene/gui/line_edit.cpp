@@ -40,7 +40,6 @@
 #include "servers/display_server.h"
 #include "servers/text_server.h"
 #ifdef TOOLS_ENABLED
-#include "editor/editor_scale.h"
 #include "editor/editor_settings.h"
 #endif
 #include "scene/main/window.h"
@@ -242,7 +241,7 @@ void LineEdit::gui_input(const Ref<InputEvent> &p_event) {
 
 		_reset_caret_blink_timer();
 		if (b->is_pressed()) {
-			accept_event(); //don't pass event further when clicked on text field
+			accept_event(); // don't pass event further when clicked on text field
 			if (!text.is_empty() && is_editable() && _is_over_clear_button(b->get_position())) {
 				clear_button_status.press_attempt = true;
 				clear_button_status.pressing_inside = true;
@@ -713,11 +712,7 @@ void LineEdit::_notification(int p_what) {
 				ofs_max -= r_icon->get_width();
 			}
 
-#ifdef TOOLS_ENABLED
-			int caret_width = Math::round(EDSCALE);
-#else
-			int caret_width = 1;
-#endif
+			int caret_width = Math::round(1 * get_theme_default_base_scale());
 
 			// Draw selections rects.
 			Vector2 ofs = Point2(x_ofs + scroll_offset, y_ofs);
@@ -1936,7 +1931,7 @@ void LineEdit::_shape() {
 	TS->shaped_text_clear(text_rid);
 
 	String t;
-	if (text.length() == 0) {
+	if (text.length() == 0 && ime_text.length() == 0) {
 		t = placeholder_translated;
 	} else if (pass) {
 		t = secret_character.repeat(text.length() + ime_text.length());

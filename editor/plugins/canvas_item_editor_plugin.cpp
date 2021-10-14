@@ -513,7 +513,7 @@ Object *CanvasItemEditor::_get_editor_data(Object *p_what) {
 }
 
 void CanvasItemEditor::_keying_changed() {
-	if (AnimationPlayerEditor::singleton->get_track_editor()->is_visible_in_tree()) {
+	if (AnimationPlayerEditor::get_singleton()->get_track_editor()->is_visible_in_tree()) {
 		animation_hb->show();
 	} else {
 		animation_hb->hide();
@@ -1174,7 +1174,6 @@ bool CanvasItemEditor::_gui_input_zoom_or_pan(const Ref<InputEvent> &p_event, bo
 		if (!panning) {
 			if (b->is_pressed() &&
 					(b->get_button_index() == MOUSE_BUTTON_MIDDLE ||
-							b->get_button_index() == MOUSE_BUTTON_RIGHT ||
 							(b->get_button_index() == MOUSE_BUTTON_LEFT && tool == TOOL_PAN) ||
 							(b->get_button_index() == MOUSE_BUTTON_LEFT && !EditorSettings::get_singleton()->get("editors/2d/simple_panning") && pan_pressed))) {
 				// Pan the viewport
@@ -1232,8 +1231,9 @@ bool CanvasItemEditor::_gui_input_zoom_or_pan(const Ref<InputEvent> &p_event, bo
 			}
 		}
 
-		if (is_pan_key) {
+		if (is_pan_key && pan_pressed != k->is_pressed()) {
 			pan_pressed = k->is_pressed();
+			_update_cursor();
 		}
 	}
 
@@ -2615,7 +2615,19 @@ void CanvasItemEditor::_update_cursor() {
 		c = CURSOR_HSIZE;
 	}
 
-	viewport->set_default_cursor_shape(c);
+	if (pan_pressed) {
+		c = CURSOR_DRAG;
+	}
+
+	if (c != viewport->get_default_cursor_shape()) {
+		viewport->set_default_cursor_shape(c);
+
+		// Force refresh cursor if it's over the viewport.
+		if (viewport->get_global_rect().has_point(get_global_mouse_position())) {
+			DisplayServer::CursorShape ds_cursor_shape = (DisplayServer::CursorShape)viewport->get_default_cursor_shape();
+			DisplayServer::get_singleton()->cursor_set_shape(ds_cursor_shape);
+		}
+	}
 }
 
 void CanvasItemEditor::_draw_text_at_position(Point2 p_position, String p_string, Side p_side) {
@@ -3816,7 +3828,7 @@ void CanvasItemEditor::_notification(int p_what) {
 			select_sb->set_default_margin(Side(i), 4);
 		}
 
-		AnimationPlayerEditor::singleton->get_track_editor()->connect("visibility_changed", callable_mp(this, &CanvasItemEditor::_keying_changed));
+		AnimationPlayerEditor::get_singleton()->get_track_editor()->connect("visibility_changed", callable_mp(this, &CanvasItemEditor::_keying_changed));
 		_keying_changed();
 
 	} else if (p_what == EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED) {
@@ -4254,10 +4266,6 @@ void CanvasItemEditor::_button_tool_select(int p_index) {
 
 	viewport->update();
 	_update_cursor();
-
-	// Request immediate refresh of cursor when using hot-keys to switch between tools
-	DisplayServer::CursorShape ds_cursor_shape = (DisplayServer::CursorShape)viewport->get_default_cursor_shape();
-	DisplayServer::get_singleton()->cursor_set_shape(ds_cursor_shape);
 }
 
 void CanvasItemEditor::_insert_animation_keys(bool p_location, bool p_rotation, bool p_scale, bool p_on_existing) {
@@ -4277,13 +4285,13 @@ void CanvasItemEditor::_insert_animation_keys(bool p_location, bool p_rotation, 
 			Node2D *n2d = Object::cast_to<Node2D>(canvas_item);
 
 			if (key_pos && p_location) {
-				AnimationPlayerEditor::singleton->get_track_editor()->insert_node_value_key(n2d, "position", n2d->get_position(), p_on_existing);
+				AnimationPlayerEditor::get_singleton()->get_track_editor()->insert_node_value_key(n2d, "position", n2d->get_position(), p_on_existing);
 			}
 			if (key_rot && p_rotation) {
-				AnimationPlayerEditor::singleton->get_track_editor()->insert_node_value_key(n2d, "rotation", n2d->get_rotation(), p_on_existing);
+				AnimationPlayerEditor::get_singleton()->get_track_editor()->insert_node_value_key(n2d, "rotation", n2d->get_rotation(), p_on_existing);
 			}
 			if (key_scale && p_scale) {
-				AnimationPlayerEditor::singleton->get_track_editor()->insert_node_value_key(n2d, "scale", n2d->get_scale(), p_on_existing);
+				AnimationPlayerEditor::get_singleton()->get_track_editor()->insert_node_value_key(n2d, "scale", n2d->get_scale(), p_on_existing);
 			}
 
 			if (n2d->has_meta("_edit_bone_") && n2d->get_parent_item()) {
@@ -4309,13 +4317,13 @@ void CanvasItemEditor::_insert_animation_keys(bool p_location, bool p_rotation, 
 				if (has_chain && ik_chain.size()) {
 					for (Node2D *&F : ik_chain) {
 						if (key_pos) {
-							AnimationPlayerEditor::singleton->get_track_editor()->insert_node_value_key(F, "position", F->get_position(), p_on_existing);
+							AnimationPlayerEditor::get_singleton()->get_track_editor()->insert_node_value_key(F, "position", F->get_position(), p_on_existing);
 						}
 						if (key_rot) {
-							AnimationPlayerEditor::singleton->get_track_editor()->insert_node_value_key(F, "rotation", F->get_rotation(), p_on_existing);
+							AnimationPlayerEditor::get_singleton()->get_track_editor()->insert_node_value_key(F, "rotation", F->get_rotation(), p_on_existing);
 						}
 						if (key_scale) {
-							AnimationPlayerEditor::singleton->get_track_editor()->insert_node_value_key(F, "scale", F->get_scale(), p_on_existing);
+							AnimationPlayerEditor::get_singleton()->get_track_editor()->insert_node_value_key(F, "scale", F->get_scale(), p_on_existing);
 						}
 					}
 				}
@@ -4325,13 +4333,13 @@ void CanvasItemEditor::_insert_animation_keys(bool p_location, bool p_rotation, 
 			Control *ctrl = Object::cast_to<Control>(canvas_item);
 
 			if (key_pos) {
-				AnimationPlayerEditor::singleton->get_track_editor()->insert_node_value_key(ctrl, "rect_position", ctrl->get_position(), p_on_existing);
+				AnimationPlayerEditor::get_singleton()->get_track_editor()->insert_node_value_key(ctrl, "rect_position", ctrl->get_position(), p_on_existing);
 			}
 			if (key_rot) {
-				AnimationPlayerEditor::singleton->get_track_editor()->insert_node_value_key(ctrl, "rect_rotation", ctrl->get_rotation(), p_on_existing);
+				AnimationPlayerEditor::get_singleton()->get_track_editor()->insert_node_value_key(ctrl, "rect_rotation", ctrl->get_rotation(), p_on_existing);
 			}
 			if (key_scale) {
-				AnimationPlayerEditor::singleton->get_track_editor()->insert_node_value_key(ctrl, "rect_size", ctrl->get_size(), p_on_existing);
+				AnimationPlayerEditor::get_singleton()->get_track_editor()->insert_node_value_key(ctrl, "rect_size", ctrl->get_size(), p_on_existing);
 			}
 		}
 	}
@@ -4771,7 +4779,7 @@ void CanvasItemEditor::_popup_callback(int p_op) {
 					}
 					/*
                                    if (key_scale)
-				   AnimationPlayerEditor::singleton->get_track_editor()->insert_node_value_key(ctrl,"rect/size",ctrl->get_size());
+				   AnimationPlayerEditor::get_singleton()->get_track_editor()->insert_node_value_key(ctrl,"rect/size",ctrl->get_size());
                                    */
 				}
 			}
@@ -5384,7 +5392,7 @@ CanvasItemEditor::CanvasItemEditor(EditorNode *p_editor) {
 	pan_button->connect("pressed", callable_mp(this, &CanvasItemEditor::_button_tool_select), make_binds(TOOL_PAN));
 	pan_button->set_shortcut(ED_SHORTCUT("canvas_item_editor/pan_mode", TTR("Pan Mode"), KEY_G));
 	pan_button->set_shortcut_context(this);
-	pan_button->set_tooltip(TTR("Pan Mode"));
+	pan_button->set_tooltip(TTR("You can also use Pan View shortcut (Space by default) to pan in any mode."));
 
 	ruler_button = memnew(Button);
 	ruler_button->set_flat(true);
