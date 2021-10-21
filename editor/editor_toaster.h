@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  groups_editor.h                                                      */
+/*  editor_toaster.h                                                     */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,118 +28,89 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef GROUPS_EDITOR_H
-#define GROUPS_EDITOR_H
+#ifndef EDITOR_TOASTER_H
+#define EDITOR_TOASTER_H
 
-#include "core/object/undo_redo.h"
-#include "editor/scene_tree_editor.h"
+#include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
-#include "scene/gui/dialogs.h"
-#include "scene/gui/item_list.h"
-#include "scene/gui/line_edit.h"
 #include "scene/gui/popup.h"
-#include "scene/gui/tree.h"
 
-class GroupDialog : public AcceptDialog {
-	GDCLASS(GroupDialog, AcceptDialog);
+#include "core/string/ustring.h"
+#include "core/templates/local_vector.h"
 
-	ConfirmationDialog *error;
+class EditorToaster : public HBoxContainer {
+	GDCLASS(EditorToaster, HBoxContainer);
 
-	SceneTree *scene_tree;
-	TreeItem *groups_root;
+public:
+	enum Severity {
+		SEVERITY_INFO = 0,
+		SEVERITY_WARNING,
+		SEVERITY_ERROR,
+	};
 
-	LineEdit *add_group_text;
+private:
+	ErrorHandlerList eh;
 
-	Tree *groups;
+	const int stylebox_radius = 3;
 
-	Tree *nodes_to_add;
-	TreeItem *add_node_root;
-	LineEdit *add_filter;
+	Ref<StyleBoxFlat> info_panel_style_background;
+	Ref<StyleBoxFlat> warning_panel_style_background;
+	Ref<StyleBoxFlat> error_panel_style_background;
 
-	Tree *nodes_to_remove;
-	TreeItem *remove_node_root;
-	LineEdit *remove_filter;
+	Ref<StyleBoxFlat> info_panel_style_progress;
+	Ref<StyleBoxFlat> warning_panel_style_progress;
+	Ref<StyleBoxFlat> error_panel_style_progress;
 
-	Label *group_empty;
+	Button *main_button;
+	PanelContainer *disable_notifications_panel;
+	Button *disable_notifications_button;
 
-	Button *add_button;
-	Button *remove_button;
+	VBoxContainer *vbox_container;
+	const int max_temporary_count = 5;
+	struct Toast {
+		Severity severity = SEVERITY_INFO;
 
-	String selected_group;
+		// Timing.
+		real_t duration = -1.0;
+		real_t remaining_time = 0.0;
+		bool popped = false;
 
-	UndoRedo *undo_redo;
+		// Messages
+		String message;
+		String tooltip;
+		int count = 0;
+	};
+	Map<Control *, Toast> toasts;
 
-	void _group_selected();
+	const double default_message_duration = 5.0;
 
-	void _remove_filter_changed(const String &p_filter);
-	void _add_filter_changed(const String &p_filter);
+	static void _error_handler(void *p_self, const char *p_func, const char *p_file, int p_line, const char *p_error, const char *p_errorexp, bool p_editor_notify, ErrorHandlerType p_type);
+	void _update_vbox_position();
+	void _update_disable_notifications_button();
+	void _auto_hide_or_free_toasts();
 
-	void _add_pressed();
-	void _removed_pressed();
-	void _add_group_pressed(const String &p_name);
+	void _draw_button();
+	void _draw_progress(Control *panel);
 
-	void _group_renamed();
-	void _rename_group_item(const String &p_old_name, const String &p_new_name);
-
-	void _add_group(String p_name);
-	void _modify_group_pressed(Object *p_item, int p_column, int p_id);
-	void _delete_group_item(const String &p_name);
-
-	bool _can_edit(Node *p_node, String p_group);
-
-	void _load_groups(Node *p_current);
-	void _load_nodes(Node *p_current);
+	void _set_notifications_enabled(bool p_enabled);
+	void _repop_old();
 
 protected:
+	static EditorToaster *singleton;
+
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
-	enum ModifyButton {
-		DELETE_GROUP,
-		COPY_GROUP,
-	};
+	static EditorToaster *get_singleton();
 
-	void edit();
-	void set_undo_redo(UndoRedo *p_undoredo) { undo_redo = p_undoredo; }
+	Control *popup(Control *p_control, Severity p_severity = SEVERITY_INFO, double p_time = 0.0, String p_tooltip = String());
+	void popup_str(String p_message, Severity p_severity = SEVERITY_INFO, String p_tooltip = String());
+	void close(Control *p_control);
 
-	GroupDialog();
+	EditorToaster();
+	~EditorToaster();
 };
 
-class GroupsEditor : public VBoxContainer {
-	GDCLASS(GroupsEditor, VBoxContainer);
+VARIANT_ENUM_CAST(EditorToaster::Severity);
 
-	Node *node;
-
-	GroupDialog *group_dialog;
-
-	LineEdit *group_name;
-	Button *add;
-	Tree *tree;
-
-	UndoRedo *undo_redo;
-
-	void update_tree();
-	void _add_group(const String &p_group = "");
-	void _modify_group(Object *p_item, int p_column, int p_id);
-	void _close();
-
-	void _show_group_dialog();
-
-protected:
-	static void _bind_methods();
-
-public:
-	enum ModifyButton {
-		DELETE_GROUP,
-		COPY_GROUP,
-	};
-
-	void set_undo_redo(UndoRedo *p_undoredo) { undo_redo = p_undoredo; }
-	void set_current(Node *p_node);
-
-	GroupsEditor();
-	~GroupsEditor();
-};
-
-#endif
+#endif // EDITOR_TOASTER_H
