@@ -1596,14 +1596,16 @@ void RichTextLabel::gui_input(const Ref<InputEvent> &p_event) {
 							selection.to_char = words[i + 1];
 
 							selection.active = true;
-							DisplayServer::get_singleton()->clipboard_set_primary(get_selected_text());
+							if (DisplayServer::get_singleton()->has_feature(DisplayServer::FEATURE_CLIPBOARD_PRIMARY)) {
+								DisplayServer::get_singleton()->clipboard_set_primary(get_selected_text());
+							}
 							update();
 							break;
 						}
 					}
 				}
 			} else if (!b->is_pressed()) {
-				if (selection.enabled) {
+				if (selection.enabled && DisplayServer::get_singleton()->has_feature(DisplayServer::FEATURE_CLIPBOARD_PRIMARY)) {
 					DisplayServer::get_singleton()->clipboard_set_primary(get_selected_text());
 				}
 				selection.click_item = nullptr;
@@ -2815,12 +2817,12 @@ bool RichTextLabel::is_scroll_following() const {
 	return scroll_follow;
 }
 
-Error RichTextLabel::parse_bbcode(const String &p_bbcode) {
+void RichTextLabel::parse_bbcode(const String &p_bbcode) {
 	clear();
-	return append_text(p_bbcode);
+	append_text(p_bbcode);
 }
 
-Error RichTextLabel::append_text(const String &p_bbcode) {
+void RichTextLabel::append_text(const String &p_bbcode) {
 	int pos = 0;
 
 	List<String> tag_stack;
@@ -3543,8 +3545,6 @@ Error RichTextLabel::append_text(const String &p_bbcode) {
 			break;
 		}
 	}
-
-	return OK;
 }
 
 void RichTextLabel::scroll_to_paragraph(int p_paragraph) {
