@@ -213,8 +213,7 @@ TypedArray<String> CPUParticles3D::get_configuration_warnings() const {
 		warnings.push_back(TTR("Nothing is visible because no mesh has been assigned."));
 	}
 
-	if (!anim_material_found && (get_param_max(PARAM_ANIM_SPEED) != 0.0 || get_param_max(PARAM_ANIM_OFFSET) != 0.0 ||
-										get_param_curve(PARAM_ANIM_SPEED).is_valid() || get_param_curve(PARAM_ANIM_OFFSET).is_valid())) {
+	if (!anim_material_found && (get_param_max(PARAM_ANIM_SPEED) != 0.0 || get_param_max(PARAM_ANIM_OFFSET) != 0.0 || get_param_curve(PARAM_ANIM_SPEED).is_valid() || get_param_curve(PARAM_ANIM_OFFSET).is_valid())) {
 		warnings.push_back(TTR("CPUParticles3D animation requires the usage of a StandardMaterial3D whose Billboard Mode is set to \"Particle Billboard\"."));
 	}
 
@@ -532,6 +531,8 @@ void CPUParticles3D::_validate_property(PropertyInfo &property) const {
 	if (property.name.begins_with("scale_curve_") && !split_scale) {
 		property.usage = PROPERTY_USAGE_NONE;
 	}
+
+	Node3D::_validate_property(property);
 }
 
 static uint32_t idhash(uint32_t x) {
