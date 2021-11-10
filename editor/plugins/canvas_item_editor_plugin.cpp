@@ -2264,9 +2264,9 @@ bool CanvasItemEditor::_gui_input_select(const Ref<InputEvent> &p_event) {
 			}
 		}
 
-		if (b.is_valid() && b->is_pressed() && b->get_button_index() == MOUSE_BUTTON_RIGHT && b->is_ctrl_pressed()) {
-			add_node_menu->set_position(get_global_transform().xform(get_local_mouse_position()));
+		if (b.is_valid() && b->is_pressed() && b->get_button_index() == MOUSE_BUTTON_RIGHT) {
 			add_node_menu->set_size(Vector2(1, 1));
+			add_node_menu->set_position(get_screen_position() + b->get_position());
 			add_node_menu->popup();
 			node_create_position = transform.affine_inverse().xform((get_local_mouse_position()));
 			return true;
@@ -5836,7 +5836,7 @@ void CanvasItemEditorViewport::_create_nodes(Node *parent, Node *child, String &
 	Ref<Texture2D> texture = Ref<Texture2D>(Object::cast_to<Texture2D>(ResourceCache::get(path)));
 
 	if (parent) {
-		editor_data->get_undo_redo().add_do_method(parent, "add_child", child);
+		editor_data->get_undo_redo().add_do_method(parent, "add_child", child, true);
 		editor_data->get_undo_redo().add_do_method(child, "set_owner", editor->get_edited_scene());
 		editor_data->get_undo_redo().add_do_reference(child);
 		editor_data->get_undo_redo().add_undo_method(parent, "remove_child", child);
@@ -6192,14 +6192,14 @@ CanvasItemEditorViewport::CanvasItemEditorViewport(EditorNode *p_node, CanvasIte
 
 	label = memnew(Label);
 	label->add_theme_color_override("font_shadow_color", Color(0, 0, 0, 1));
-	label->add_theme_constant_override("shadow_as_outline", 1 * EDSCALE);
+	label->add_theme_constant_override("shadow_outline_size", 1 * EDSCALE);
 	label->hide();
 	canvas_item_editor->get_controls_container()->add_child(label);
 
 	label_desc = memnew(Label);
 	label_desc->add_theme_color_override("font_color", Color(0.6f, 0.6f, 0.6f, 1));
 	label_desc->add_theme_color_override("font_shadow_color", Color(0.2f, 0.2f, 0.2f, 1));
-	label_desc->add_theme_constant_override("shadow_as_outline", 1 * EDSCALE);
+	label_desc->add_theme_constant_override("shadow_outline_size", 1 * EDSCALE);
 	label_desc->add_theme_constant_override("line_spacing", 0);
 	label_desc->hide();
 	canvas_item_editor->get_controls_container()->add_child(label_desc);

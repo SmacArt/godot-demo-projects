@@ -47,6 +47,7 @@
 #include "editor/plugins/script_editor_plugin.h"
 #include "editor/shader_create_dialog.h"
 #include "scene/main/window.h"
+#include "scene/property_utils.h"
 #include "scene/resources/packed_scene.h"
 #include "servers/display_server.h"
 #include "servers/rendering_server.h"
@@ -2153,7 +2154,7 @@ void SceneTreeDock::_do_create(Node *p_parent) {
 	editor_data->get_undo_redo().create_action(TTR("Create Node"));
 
 	if (edited_scene) {
-		editor_data->get_undo_redo().add_do_method(p_parent, "add_child", child);
+		editor_data->get_undo_redo().add_do_method(p_parent, "add_child", child, true);
 		editor_data->get_undo_redo().add_do_method(child, "set_owner", edited_scene);
 		editor_data->get_undo_redo().add_do_method(editor_selection, "clear");
 		editor_data->get_undo_redo().add_do_method(editor_selection, "add_node", child);
@@ -2943,7 +2944,7 @@ void SceneTreeDock::open_script_dialog(Node *p_for_node, bool p_extend) {
 	}
 }
 
-void SceneTreeDock::attach_shader_to_selected() {
+void SceneTreeDock::attach_shader_to_selected(int p_preferred_mode) {
 	if (selected_shader_material.is_null()) {
 		return;
 	}
@@ -2970,13 +2971,13 @@ void SceneTreeDock::attach_shader_to_selected() {
 	shader_create_dialog->connect("shader_created", callable_mp(this, &SceneTreeDock::_shader_created));
 	shader_create_dialog->connect("confirmed", callable_mp(this, &SceneTreeDock::_shader_creation_closed));
 	shader_create_dialog->connect("cancelled", callable_mp(this, &SceneTreeDock::_shader_creation_closed));
-	shader_create_dialog->config(path);
+	shader_create_dialog->config(path, true, true, p_preferred_mode);
 	shader_create_dialog->popup_centered();
 }
 
-void SceneTreeDock::open_shader_dialog(Ref<ShaderMaterial> &p_for_material) {
+void SceneTreeDock::open_shader_dialog(Ref<ShaderMaterial> &p_for_material, int p_preferred_mode) {
 	selected_shader_material = p_for_material;
-	attach_shader_to_selected();
+	attach_shader_to_selected(p_preferred_mode);
 }
 
 void SceneTreeDock::open_add_child_dialog() {
@@ -3132,7 +3133,9 @@ void SceneTreeDock::_clear_clipboard() {
 void SceneTreeDock::_create_remap_for_node(Node *p_node, Map<RES, RES> &r_remap) {
 	List<PropertyInfo> props;
 	p_node->get_property_list(&props);
-	bool is_instantiated = EditorPropertyRevert::may_node_be_in_instance(p_node);
+
+	Vector<SceneState::PackState> states_stack;
+	bool states_stack_ready = false;
 
 	for (const PropertyInfo &E : props) {
 		if (!(E.usage & PROPERTY_USAGE_STORAGE)) {
@@ -3143,16 +3146,17 @@ void SceneTreeDock::_create_remap_for_node(Node *p_node, Map<RES, RES> &r_remap)
 		if (v.is_ref()) {
 			RES res = v;
 			if (res.is_valid()) {
-				if (is_instantiated) {
-					Variant orig;
-					if (EditorPropertyRevert::get_instantiated_node_original_property(p_node, E.name, orig)) {
-						if (!EditorPropertyRevert::is_node_property_different(p_node, v, orig)) {
-							continue;
-						}
-					}
+				if (!states_stack_ready) {
+					states_stack = PropertyUtils::get_node_states_stack(p_node);
+					states_stack_ready = true;
 				}
 
-				if ((res->get_path() == "" || res->get_path().find("::") > -1) && !r_remap.has(res)) {
+				Variant orig = PropertyUtils::get_property_default_value(p_node, E.name, &states_stack);
+				if (!PropertyUtils::is_property_value_different(v, orig)) {
+					continue;
+				}
+
+				if (res->is_built_in() && !r_remap.has(res)) {
 					_create_remap_for_resource(res, r_remap);
 				}
 			}
@@ -3179,7 +3183,7 @@ void SceneTreeDock::_create_remap_for_resource(RES p_resource, Map<RES, RES> &r_
 		if (v.is_ref()) {
 			RES res = v;
 			if (res.is_valid()) {
-				if ((res->get_path() == "" || res->get_path().find("::") > -1) && !r_remap.has(res)) {
+				if (res->is_built_in() && !r_remap.has(res)) {
 					_create_remap_for_resource(res, r_remap);
 				}
 			}

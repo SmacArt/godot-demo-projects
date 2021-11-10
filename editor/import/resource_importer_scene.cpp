@@ -424,10 +424,10 @@ Node *ResourceImporterScene::_pre_fix_node(Node *p_node, Node *p_root, Map<Ref<I
 
 			String animname = E;
 			const int loop_string_count = 3;
-			static const char *loop_strings[loop_string_count] = { "loops", "loop", "cycle" };
+			static const char *loop_strings[loop_string_count] = { "loop_mode", "loop", "cycle" };
 			for (int i = 0; i < loop_string_count; i++) {
 				if (_teststr(animname, loop_strings[i])) {
-					anim->set_loop(true);
+					anim->set_loop_mode(Animation::LoopMode::LOOP_LINEAR);
 					animname = _fixstr(animname, loop_strings[i]);
 					ap->rename_animation(E, animname);
 				}
@@ -502,7 +502,7 @@ Node *ResourceImporterScene::_pre_fix_node(Node *p_node, Node *p_root, Map<Ref<I
 				sphereShape->set_radius(1);
 				colshape->set_shape(sphereShape);
 			}
-			sb->add_child(colshape);
+			sb->add_child(colshape, true);
 			colshape->set_owner(sb->get_owner());
 		}
 
@@ -528,7 +528,7 @@ Node *ResourceImporterScene::_pre_fix_node(Node *p_node, Node *p_root, Map<Ref<I
 			rigid_body->set_transform(mi->get_transform());
 			p_node = rigid_body;
 			mi->set_transform(Transform3D());
-			rigid_body->add_child(mi);
+			rigid_body->add_child(mi, true);
 			mi->set_owner(rigid_body->get_owner());
 
 			_add_shapes(rigid_body, shapes);
@@ -566,7 +566,7 @@ Node *ResourceImporterScene::_pre_fix_node(Node *p_node, Node *p_root, Map<Ref<I
 
 			if (shapes.size()) {
 				StaticBody3D *col = memnew(StaticBody3D);
-				mi->add_child(col);
+				mi->add_child(col, true);
 				col->set_owner(mi->get_owner());
 
 				_add_shapes(col, shapes);
@@ -614,7 +614,7 @@ Node *ResourceImporterScene::_pre_fix_node(Node *p_node, Node *p_root, Map<Ref<I
 
 			if (shapes.size()) {
 				StaticBody3D *col = memnew(StaticBody3D);
-				p_node->add_child(col);
+				p_node->add_child(col, true);
 				col->set_owner(p_node->get_owner());
 
 				_add_shapes(col, shapes);
@@ -749,7 +749,7 @@ Node *ResourceImporterScene::_post_fix_node(Node *p_node, Node *p_root, Map<Ref<
 						switch (mesh_physics_mode) {
 							case MESH_PHYSICS_MESH_AND_STATIC_COLLIDER: {
 								StaticBody3D *col = memnew(StaticBody3D);
-								p_node->add_child(col);
+								p_node->add_child(col, true);
 								col->set_owner(p_node->get_owner());
 								col->set_transform(get_collision_shapes_transform(node_settings));
 								base = col;
@@ -761,7 +761,7 @@ Node *ResourceImporterScene::_post_fix_node(Node *p_node, Node *p_root, Map<Ref<
 								rigid_body->set_transform(mi->get_transform() * get_collision_shapes_transform(node_settings));
 								p_node = rigid_body;
 								mi->set_transform(Transform3D());
-								rigid_body->add_child(mi);
+								rigid_body->add_child(mi, true);
 								mi->set_owner(rigid_body->get_owner());
 								base = rigid_body;
 							} break;
@@ -790,7 +790,7 @@ Node *ResourceImporterScene::_post_fix_node(Node *p_node, Node *p_root, Map<Ref<
 						for (const Ref<Shape3D> &E : shapes) {
 							CollisionShape3D *cshape = memnew(CollisionShape3D);
 							cshape->set_shape(E);
-							base->add_child(cshape);
+							base->add_child(cshape, true);
 
 							cshape->set_owner(base->get_owner());
 							idx++;
@@ -823,7 +823,7 @@ Node *ResourceImporterScene::_post_fix_node(Node *p_node, Node *p_root, Map<Ref<
 						memdelete(p_node);
 						p_node = nmi;
 					} else {
-						mi->add_child(nmi);
+						mi->add_child(nmi, true);
 						nmi->set_owner(mi->get_owner());
 					}
 				}
@@ -868,7 +868,7 @@ Node *ResourceImporterScene::_post_fix_node(Node *p_node, Node *p_root, Map<Ref<
 				String name = node_settings["clip_" + itos(i + 1) + "/name"];
 				int from_frame = node_settings["clip_" + itos(i + 1) + "/start_frame"];
 				int end_frame = node_settings["clip_" + itos(i + 1) + "/end_frame"];
-				bool loop = node_settings["clip_" + itos(i + 1) + "/loops"];
+				Animation::LoopMode loop_mode = static_cast<Animation::LoopMode>((int)node_settings["clip_" + itos(i + 1) + "/loop_mode"]);
 				bool save_to_file = node_settings["clip_" + itos(i + 1) + "/save_to_file/enabled"];
 				bool save_to_path = node_settings["clip_" + itos(i + 1) + "/save_to_file/path"];
 				bool save_to_file_keep_custom = node_settings["clip_" + itos(i + 1) + "/save_to_file/keep_custom_tracks"];
@@ -876,7 +876,7 @@ Node *ResourceImporterScene::_post_fix_node(Node *p_node, Node *p_root, Map<Ref<
 				animation_clips.push_back(name);
 				animation_clips.push_back(from_frame / p_animation_fps);
 				animation_clips.push_back(end_frame / p_animation_fps);
-				animation_clips.push_back(loop);
+				animation_clips.push_back(loop_mode);
 				animation_clips.push_back(save_to_file);
 				animation_clips.push_back(save_to_path);
 				animation_clips.push_back(save_to_file_keep_custom);
@@ -903,7 +903,7 @@ Node *ResourceImporterScene::_post_fix_node(Node *p_node, Node *p_root, Map<Ref<
 						}
 					}
 
-					anim->set_loop(anim_settings["settings/loops"]);
+					anim->set_loop_mode(static_cast<Animation::LoopMode>((int)anim_settings["settings/loop_mode"]));
 					bool save = anim_settings["save_to_file/enabled"];
 					String path = anim_settings["save_to_file/path"];
 					bool keep_custom = anim_settings["save_to_file/keep_custom_tracks"];
@@ -977,7 +977,7 @@ Ref<Animation> ResourceImporterScene::_save_animation_to_file(Ref<Animation> ani
 					old_anim->copy_track(i, anim);
 				}
 			}
-			anim->set_loop(old_anim->has_loop());
+			anim->set_loop_mode(old_anim->get_loop_mode());
 		}
 	}
 
@@ -1005,7 +1005,7 @@ void ResourceImporterScene::_create_clips(AnimationPlayer *anim, const Array &p_
 		String name = p_clips[i];
 		float from = p_clips[i + 1];
 		float to = p_clips[i + 2];
-		bool loop = p_clips[i + 3];
+		Animation::LoopMode loop_mode = static_cast<Animation::LoopMode>((int)p_clips[i + 3]);
 		bool save_to_file = p_clips[i + 4];
 		String save_to_path = p_clips[i + 5];
 		bool keep_current = p_clips[i + 6];
@@ -1135,7 +1135,7 @@ void ResourceImporterScene::_create_clips(AnimationPlayer *anim, const Array &p_
 			}
 		}
 
-		new_anim->set_loop(loop);
+		new_anim->set_loop_mode(loop_mode);
 		new_anim->set_length(to - from);
 		anim->add_animation(name, new_anim);
 
@@ -1218,7 +1218,7 @@ void ResourceImporterScene::get_internal_import_options(InternalImportCategory p
 			r_options->push_back(ImportOption(PropertyInfo(Variant::STRING, "use_external/path", PROPERTY_HINT_FILE, "*.material,*.res,*.tres"), ""));
 		} break;
 		case INTERNAL_IMPORT_CATEGORY_ANIMATION: {
-			r_options->push_back(ResourceImporter::ImportOption(PropertyInfo(Variant::BOOL, "settings/loops"), false));
+			r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "settings/loop_mode"), 0));
 			r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "save_to_file/enabled", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_UPDATE_ALL_IF_MODIFIED), false));
 			r_options->push_back(ImportOption(PropertyInfo(Variant::STRING, "save_to_file/path", PROPERTY_HINT_SAVE_FILE, "*.res,*.tres"), ""));
 			r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "save_to_file/keep_custom_tracks"), ""));
@@ -1240,7 +1240,7 @@ void ResourceImporterScene::get_internal_import_options(InternalImportCategory p
 				r_options->push_back(ImportOption(PropertyInfo(Variant::STRING, "slice_" + itos(i + 1) + "/name"), ""));
 				r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "slice_" + itos(i + 1) + "/start_frame"), 0));
 				r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "slice_" + itos(i + 1) + "/end_frame"), 0));
-				r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "slice_" + itos(i + 1) + "/loops"), false));
+				r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "slice_" + itos(i + 1) + "/loop_mode"), 0));
 				r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "slice_" + itos(i + 1) + "/save_to_file/enabled", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_UPDATE_ALL_IF_MODIFIED), false));
 				r_options->push_back(ImportOption(PropertyInfo(Variant::STRING, "slice_" + itos(i + 1) + "/save_to_file/path", PROPERTY_HINT_SAVE_FILE, ".res,*.tres"), ""));
 				r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "slice_" + itos(i + 1) + "/save_to_file/keep_custom_tracks"), false));
@@ -1428,10 +1428,10 @@ void ResourceImporterScene::get_import_options(List<ImportOption> *r_options, in
 	r_options->push_back(ImportOption(PropertyInfo(Variant::FLOAT, "meshes/lightmap_texel_size", PROPERTY_HINT_RANGE, "0.001,100,0.001"), 0.1));
 	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "skins/use_named_skins"), true));
 	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "animation/import"), true));
-	r_options->push_back(ImportOption(PropertyInfo(Variant::FLOAT, "animation/fps", PROPERTY_HINT_RANGE, "1,120,1"), 15));
+	r_options->push_back(ImportOption(PropertyInfo(Variant::FLOAT, "animation/fps", PROPERTY_HINT_RANGE, "1,120,1"), 30));
 	r_options->push_back(ImportOption(PropertyInfo(Variant::STRING, "import_script/path", PROPERTY_HINT_FILE, script_ext_hint), ""));
 
-	r_options->push_back(ImportOption(PropertyInfo(Variant::DICTIONARY, "_subresources", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NOEDITOR), Dictionary()));
+	r_options->push_back(ImportOption(PropertyInfo(Variant::DICTIONARY, "_subresources", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), Dictionary()));
 
 	for (int i = 0; i < post_importer_plugins.size(); i++) {
 		post_importer_plugins.write[i]->get_import_options(r_options);
@@ -1680,7 +1680,7 @@ void ResourceImporterScene::_add_shapes(Node *p_node, const Vector<Ref<Shape3D>>
 	for (const Ref<Shape3D> &E : p_shapes) {
 		CollisionShape3D *cshape = memnew(CollisionShape3D);
 		cshape->set_shape(E);
-		p_node->add_child(cshape);
+		p_node->add_child(cshape, true);
 
 		cshape->set_owner(p_node->get_owner());
 	}

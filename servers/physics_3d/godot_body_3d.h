@@ -55,8 +55,15 @@ class GodotBody3D : public GodotCollisionObject3D {
 	real_t friction = 1.0;
 	Vector3 inertia;
 
-	real_t linear_damp = -1.0;
-	real_t angular_damp = -1.0;
+	PhysicsServer3D::BodyDampMode linear_damp_mode = PhysicsServer3D::BODY_DAMP_MODE_COMBINE;
+	PhysicsServer3D::BodyDampMode angular_damp_mode = PhysicsServer3D::BODY_DAMP_MODE_COMBINE;
+
+	real_t linear_damp = 0.0;
+	real_t angular_damp = 0.0;
+
+	real_t total_linear_damp = 0.0;
+	real_t total_angular_damp = 0.0;
+
 	real_t gravity_scale = 1.0;
 
 	uint16_t locked_axis = 0;
@@ -82,9 +89,6 @@ class GodotBody3D : public GodotCollisionObject3D {
 
 	Vector3 applied_force;
 	Vector3 applied_torque;
-
-	real_t area_angular_damp = 0.0;
-	real_t area_linear_damp = 0.0;
 
 	SelfList<GodotBody3D> active_list;
 	SelfList<GodotBody3D> mass_properties_update_list;
@@ -196,6 +200,7 @@ public:
 
 	_FORCE_INLINE_ Basis get_principal_inertia_axes() const { return principal_inertia_axes; }
 	_FORCE_INLINE_ Vector3 get_center_of_mass() const { return center_of_mass; }
+	_FORCE_INLINE_ Vector3 get_center_of_mass_local() const { return center_of_mass_local; }
 	_FORCE_INLINE_ Vector3 xform_local_to_principal(const Vector3 &p_pos) const { return principal_inertia_axes_local.xform(p_pos - center_of_mass_local); }
 
 	_FORCE_INLINE_ void set_linear_velocity(const Vector3 &p_velocity) { linear_velocity = p_velocity; }
@@ -285,7 +290,6 @@ public:
 	_FORCE_INLINE_ const Vector3 &get_inv_inertia() const { return _inv_inertia; }
 	_FORCE_INLINE_ const Basis &get_inv_inertia_tensor() const { return _inv_inertia_tensor; }
 	_FORCE_INLINE_ real_t get_friction() const { return friction; }
-	_FORCE_INLINE_ const Vector3 &get_gravity() const { return gravity; }
 	_FORCE_INLINE_ real_t get_bounce() const { return bounce; }
 
 	void set_axis_lock(PhysicsServer3D::BodyAxis p_axis, bool lock);

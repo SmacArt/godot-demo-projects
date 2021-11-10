@@ -513,18 +513,18 @@ void GodotPhysicsServer2D::area_set_collision_layer(RID p_area, uint32_t p_layer
 	area->set_collision_layer(p_layer);
 }
 
-void GodotPhysicsServer2D::area_set_monitor_callback(RID p_area, Object *p_receiver, const StringName &p_method) {
+void GodotPhysicsServer2D::area_set_monitor_callback(RID p_area, const Callable &p_callback) {
 	GodotArea2D *area = area_owner.get_or_null(p_area);
 	ERR_FAIL_COND(!area);
 
-	area->set_monitor_callback(p_receiver ? p_receiver->get_instance_id() : ObjectID(), p_method);
+	area->set_monitor_callback(p_callback.is_valid() ? p_callback : Callable());
 }
 
-void GodotPhysicsServer2D::area_set_area_monitor_callback(RID p_area, Object *p_receiver, const StringName &p_method) {
+void GodotPhysicsServer2D::area_set_area_monitor_callback(RID p_area, const Callable &p_callback) {
 	GodotArea2D *area = area_owner.get_or_null(p_area);
 	ERR_FAIL_COND(!area);
 
-	area->set_area_monitor_callback(p_receiver ? p_receiver->get_instance_id() : ObjectID(), p_method);
+	area->set_area_monitor_callback(p_callback.is_valid() ? p_callback : Callable());
 }
 
 /* BODY API */
@@ -963,10 +963,17 @@ bool GodotPhysicsServer2D::body_test_motion(RID p_body, const MotionParameters &
 PhysicsDirectBodyState2D *GodotPhysicsServer2D::body_get_direct_state(RID p_body) {
 	ERR_FAIL_COND_V_MSG((using_threads && !doing_sync), nullptr, "Body state is inaccessible right now, wait for iteration or physics process notification.");
 
+	if (!body_owner.owns(p_body)) {
+		return nullptr;
+	}
+
 	GodotBody2D *body = body_owner.get_or_null(p_body);
 	ERR_FAIL_COND_V(!body, nullptr);
 
-	ERR_FAIL_COND_V(!body->get_space(), nullptr);
+	if (!body->get_space()) {
+		return nullptr;
+	}
+
 	ERR_FAIL_COND_V_MSG(body->get_space()->is_locked(), nullptr, "Body state is inaccessible right now, wait for iteration or physics process notification.");
 
 	return body->get_direct_state();

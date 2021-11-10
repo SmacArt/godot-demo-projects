@@ -375,18 +375,21 @@ void ScriptTextEditor::ensure_focus() {
 String ScriptTextEditor::get_name() {
 	String name;
 
-	if (script->get_path().find("local://") == -1 && script->get_path().find("::") == -1) {
-		name = script->get_path().get_file();
-		if (is_unsaved()) {
-			if (script->get_path().is_empty()) {
-				name = TTR("[unsaved]");
-			}
-			name += "(*)";
+	name = script->get_path().get_file();
+	if (name.is_empty()) {
+		// This appears for newly created built-in scripts before saving the scene.
+		name = TTR("[unsaved]");
+	} else if (script->is_built_in()) {
+		const String &script_name = script->get_name();
+		if (script_name != "") {
+			// If the built-in script has a custom resource name defined,
+			// display the built-in script name as follows: `ResourceName (scene_file.tscn)`
+			name = vformat("%s (%s)", script_name, name.get_slice("::", 0));
 		}
-	} else if (script->get_name() != "") {
-		name = script->get_name();
-	} else {
-		name = script->get_class() + "(" + itos(script->get_instance_id()) + ")";
+	}
+
+	if (is_unsaved()) {
+		name += "(*)";
 	}
 
 	return name;
@@ -658,7 +661,7 @@ void ScriptEditor::_update_modified_scripts_for_external_editor(Ref<Script> p_fo
 			continue;
 		}
 
-		if (script->get_path() == "" || script->get_path().find("local://") != -1 || script->get_path().find("::") != -1) {
+		if (script->is_built_in()) {
 			continue; //internal script, who cares, though weird
 		}
 

@@ -7439,7 +7439,6 @@ Error ShaderLanguage::_parse_shader(const Map<StringName, FunctionInfo> &p_funct
 
 	int texture_uniforms = 0;
 	int texture_binding = 0;
-	int uniforms = 0;
 	int instance_index = 0;
 	ShaderNode::Uniform::Scope uniform_scope = ShaderNode::Uniform::SCOPE_LOCAL;
 
@@ -7790,9 +7789,6 @@ Error ShaderLanguage::_parse_shader(const Map<StringName, FunctionInfo> &p_funct
 							return ERR_PARSE_ERROR;
 						}
 						uniform2.texture_order = -1;
-						if (uniform_scope != ShaderNode::Uniform::SCOPE_INSTANCE) {
-							uniform2.order = uniforms++;
-						}
 					}
 
 					if (uniform2.array_size > 0) {
@@ -8771,6 +8767,20 @@ Error ShaderLanguage::_parse_shader(const Map<StringName, FunctionInfo> &p_funct
 		tk = _get_token();
 	}
 
+	int uniforms = 0;
+
+	// Need to push arrays to first place in a uniform buffer in order to correct work.
+	for (Map<StringName, ShaderNode::Uniform>::Element *E = shader->uniforms.front(); E; E = E->next()) {
+		if (E->get().texture_order == -1 && E->get().scope != ShaderNode::Uniform::SCOPE_INSTANCE && E->get().array_size > 0) {
+			E->get().order = uniforms++;
+		}
+	}
+	for (Map<StringName, ShaderNode::Uniform>::Element *E = shader->uniforms.front(); E; E = E->next()) {
+		if (E->get().texture_order == -1 && E->get().scope != ShaderNode::Uniform::SCOPE_INSTANCE && E->get().array_size == 0) {
+			E->get().order = uniforms++;
+		}
+	}
+
 	int error_line;
 	String error_message;
 	if (!_check_varying_usages(&error_line, &error_message)) {
@@ -9370,15 +9380,6 @@ Error ShaderLanguage::complete(const String &p_code, const Map<StringName, Funct
 					limit = 4;
 
 				} break;
-				case TYPE_MAT2:
-					limit = 2;
-					break;
-				case TYPE_MAT3:
-					limit = 3;
-					break;
-				case TYPE_MAT4:
-					limit = 4;
-					break;
 				default: {
 				}
 			}
