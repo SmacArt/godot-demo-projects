@@ -34,6 +34,7 @@
 #include "core/io/resource_saver.h"
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
+#include "core/version_generated.gen.h"
 #include "editor/editor_node.h"
 #include "editor/editor_scale.h"
 #include "editor/editor_settings.h"
@@ -142,10 +143,10 @@ void ShaderTextEditor::_load_theme_settings() {
 		}
 	}
 
-	const Color member_variable_color = EDITOR_GET("text_editor/theme/highlighting/member_variable_color");
+	const Color user_type_color = EDITOR_GET("text_editor/theme/highlighting/user_type_color");
 
 	for (const String &E : built_ins) {
-		syntax_highlighter->add_keyword_color(E, member_variable_color);
+		syntax_highlighter->add_keyword_color(E, user_type_color);
 	}
 
 	// Colorize comments.
@@ -384,7 +385,7 @@ void ShaderEditor::_menu_option(int p_option) {
 			shader_editor->remove_all_bookmarks();
 		} break;
 		case HELP_DOCS: {
-			OS::get_singleton()->shell_open("https://docs.godotengine.org/en/latest/tutorials/shaders/shader_reference/index.html");
+			OS::get_singleton()->shell_open(vformat("%s/tutorials/shaders/shader_reference/index.html", VERSION_DOCS_URL));
 		} break;
 	}
 	if (p_option != SEARCH_FIND && p_option != SEARCH_REPLACE && p_option != SEARCH_GOTO_LINE) {
@@ -552,7 +553,7 @@ void ShaderEditor::_text_edit_gui_input(const Ref<InputEvent> &ev) {
 	Ref<InputEventMouseButton> mb = ev;
 
 	if (mb.is_valid()) {
-		if (mb->get_button_index() == MOUSE_BUTTON_RIGHT && mb->is_pressed()) {
+		if (mb->get_button_index() == MouseButton::RIGHT && mb->is_pressed()) {
 			CodeEdit *tx = shader_editor->get_text_editor();
 
 			Point2i pos = tx->get_line_column_at_pos(mb->get_global_position() - tx->get_global_position());

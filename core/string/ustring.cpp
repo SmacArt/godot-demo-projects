@@ -38,6 +38,7 @@
 #include "core/string/translation.h"
 #include "core/string/ucaps.h"
 #include "core/variant/variant.h"
+#include "core/version_generated.gen.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -950,10 +951,6 @@ signed char String::naturalnocasecmp_to(const String &p_str) const {
 const char32_t *String::get_data() const {
 	static const char32_t zero = 0;
 	return size() ? &operator[](0) : &zero;
-}
-
-void String::erase(int p_pos, int p_chars) {
-	*this = left(MAX(p_pos, 0)) + substr(p_pos + p_chars, length() - ((p_pos + p_chars)));
 }
 
 String String::capitalize() const {
@@ -4420,7 +4417,7 @@ String String::property_name_encode() const {
 	// as well as '"', '=' or ' ' (32)
 	const char32_t *cstr = get_data();
 	for (int i = 0; cstr[i]; i++) {
-		if (cstr[i] == '=' || cstr[i] == '"' || cstr[i] < 33 || cstr[i] > 126) {
+		if (cstr[i] == '=' || cstr[i] == '"' || cstr[i] == ';' || cstr[i] == '[' || cstr[i] == ']' || cstr[i] < 33 || cstr[i] > 126) {
 			return "\"" + c_escape_multiline() + "\"";
 		}
 	}
@@ -4872,15 +4869,20 @@ String TTRN(const String &p_text, const String &p_text_plural, int p_n, const St
 	return p_text_plural;
 }
 
+/* DTR and DTRN are used for the documentation, handling descriptions extracted
+ * from the XML.
+ * They also replace `$DOCS_URL` with the actual URL to the documentation's branch,
+ * to allow dehardcoding it in the XML and doing proper substitutions everywhere.
+ */
 String DTR(const String &p_text, const String &p_context) {
 	// Comes straight from the XML, so remove indentation and any trailing whitespace.
 	const String text = p_text.dedent().strip_edges();
 
 	if (TranslationServer::get_singleton()) {
-		return TranslationServer::get_singleton()->doc_translate(text, p_context);
+		return String(TranslationServer::get_singleton()->doc_translate(text, p_context)).replace("$DOCS_URL", VERSION_DOCS_URL);
 	}
 
-	return text;
+	return text.replace("$DOCS_URL", VERSION_DOCS_URL);
 }
 
 String DTRN(const String &p_text, const String &p_text_plural, int p_n, const String &p_context) {
@@ -4888,14 +4890,14 @@ String DTRN(const String &p_text, const String &p_text_plural, int p_n, const St
 	const String text_plural = p_text_plural.dedent().strip_edges();
 
 	if (TranslationServer::get_singleton()) {
-		return TranslationServer::get_singleton()->doc_translate_plural(text, text_plural, p_n, p_context);
+		return String(TranslationServer::get_singleton()->doc_translate_plural(text, text_plural, p_n, p_context)).replace("$DOCS_URL", VERSION_DOCS_URL);
 	}
 
 	// Return message based on English plural rule if translation is not possible.
 	if (p_n == 1) {
-		return text;
+		return text.replace("$DOCS_URL", VERSION_DOCS_URL);
 	}
-	return text_plural;
+	return text_plural.replace("$DOCS_URL", VERSION_DOCS_URL);
 }
 #endif
 
