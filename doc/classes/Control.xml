@@ -654,6 +654,12 @@
 				See [method add_theme_stylebox_override].
 			</description>
 		</method>
+		<method name="is_drag_successful" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] if drag operation is successful.
+			</description>
+		</method>
 		<method name="is_layout_rtl" qualifiers="const">
 			<return type="bool" />
 			<description>
@@ -712,6 +718,12 @@
 			<argument index="0" name="name" type="StringName" />
 			<description>
 				Removes a local override for a theme [StyleBox] with the specified [code]name[/code] previously added by [method add_theme_stylebox_override] or via the Inspector dock.
+			</description>
+		</method>
+		<method name="reset_size">
+			<return type="void" />
+			<description>
+				Resets the size to [method get_combined_minimum_size]. This is equivalent to calling [code]set_size(Vector2())[/code] (or any size below the minimum).
 			</description>
 		</method>
 		<method name="set_anchor">
