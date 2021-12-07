@@ -383,6 +383,9 @@ void EditorNode::_update_scene_tabs() {
 
 void EditorNode::_version_control_menu_option(int p_idx) {
 	switch (vcs_actions_menu->get_item_id(p_idx)) {
+		case RUN_VCS_METADATA: {
+			VersionControlEditorPlugin::get_singleton()->popup_vcs_metadata_dialog();
+		} break;
 		case RUN_VCS_SETTINGS: {
 			VersionControlEditorPlugin::get_singleton()->popup_vcs_set_up_dialog(gui_base);
 		} break;
@@ -828,7 +831,7 @@ void EditorNode::_remove_plugin_from_enabled(const String &p_name) {
 	PackedStringArray enabled_plugins = ps->get("editor_plugins/enabled");
 	for (int i = 0; i < enabled_plugins.size(); ++i) {
 		if (enabled_plugins.get(i) == p_name) {
-			enabled_plugins.remove(i);
+			enabled_plugins.remove_at(i);
 			break;
 		}
 	}
@@ -2312,8 +2315,6 @@ void EditorNode::_run(bool p_current, const String &p_custom) {
 	play_custom_scene_button->set_icon(gui_base->get_theme_icon(SNAME("PlayCustom"), SNAME("EditorIcons")));
 
 	String run_filename;
-	String args;
-	bool skip_breakpoints;
 
 	if (p_current || (editor_data.get_edited_scene_root() && p_custom != String() && p_custom == editor_data.get_edited_scene_root()->get_scene_file_path())) {
 		Node *scene = editor_data.get_edited_scene_root();
@@ -2368,17 +2369,11 @@ void EditorNode::_run(bool p_current, const String &p_custom) {
 		make_bottom_panel_item_visible(log);
 	}
 
-	List<String> breakpoints;
-	editor_data.get_editor_breakpoints(&breakpoints);
-
-	args = ProjectSettings::get_singleton()->get("editor/run/main_run_args");
-	skip_breakpoints = EditorDebuggerNode::get_singleton()->is_skip_breakpoints();
-
 	EditorDebuggerNode::get_singleton()->start();
-	Error error = editor_run.run(run_filename, args, breakpoints, skip_breakpoints);
+	Error error = editor_run.run(run_filename);
 	if (error != OK) {
 		EditorDebuggerNode::get_singleton()->stop();
-		show_accept(TTR("Could not start subprocess!"), TTR("OK"));
+		show_accept(TTR("Could not start subprocess(es)!"), TTR("OK"));
 		return;
 	}
 
@@ -3196,7 +3191,7 @@ void EditorNode::remove_editor_plugin(EditorPlugin *p_editor, bool p_config_chan
 				}
 
 				memdelete(singleton->main_editor_buttons[i]);
-				singleton->main_editor_buttons.remove(i);
+				singleton->main_editor_buttons.remove_at(i);
 
 				break;
 			}
@@ -3755,7 +3750,7 @@ void EditorNode::_open_recent_scene(int p_idx) {
 		ERR_FAIL_INDEX(p_idx, rc.size());
 
 		if (load_scene(rc[p_idx]) != OK) {
-			rc.remove(p_idx);
+			rc.remove_at(p_idx);
 			EditorSettings::get_singleton()->set_project_metadata("recent_files", "scenes", rc);
 			_update_recent_scenes();
 		}
@@ -4241,7 +4236,6 @@ void EditorNode::_dock_make_float() {
 	Size2 dock_size = dock->get_size() + borders * 2; // remember size
 	Point2 dock_screen_pos = dock->get_global_position() + get_tree()->get_root()->get_position() - borders;
 
-	print_line("dock pos: " + dock->get_global_position() + " window pos: " + get_tree()->get_root()->get_position());
 	int dock_index = dock->get_index();
 	dock_slot[dock_popup_selected]->remove_child(dock);
 
@@ -5057,7 +5051,8 @@ void EditorNode::_scene_tab_input(const Ref<InputEvent> &p_input) {
 				scene_tabs_context_menu->add_item(TTR("Close Tabs to the Right"), FILE_CLOSE_RIGHT);
 				scene_tabs_context_menu->add_item(TTR("Close All Tabs"), FILE_CLOSE_ALL);
 			}
-			scene_tabs_context_menu->set_position(mb->get_global_position());
+			scene_tabs_context_menu->set_position(scene_tabs->get_screen_position() + mb->get_position());
+			scene_tabs_context_menu->reset_size();
 			scene_tabs_context_menu->popup();
 		}
 		if (mb->get_button_index() == MouseButton::WHEEL_UP && mb->is_pressed()) {
@@ -5174,7 +5169,7 @@ void EditorNode::remove_bottom_panel_item(Control *p_item) {
 			bottom_panel_vb->remove_child(bottom_panel_items[i].control);
 			bottom_panel_hb_editors->remove_child(bottom_panel_items[i].button);
 			memdelete(bottom_panel_items[i].button);
-			bottom_panel_items.remove(i);
+			bottom_panel_items.remove_at(i);
 			break;
 		}
 	}
@@ -6432,6 +6427,7 @@ EditorNode::EditorNode() {
 	p->add_separator();
 	p->add_child(vcs_actions_menu);
 	p->add_submenu_item(TTR("Version Control"), "Version Control");
+	vcs_actions_menu->add_item(TTR("Create Version Control Metadata"), RUN_VCS_METADATA);
 	vcs_actions_menu->add_item(TTR("Set Up Version Control"), RUN_VCS_SETTINGS);
 	vcs_actions_menu->add_item(TTR("Shut Down Version Control"), RUN_VCS_SHUT_DOWN);
 
@@ -6844,7 +6840,7 @@ EditorNode::EditorNode() {
 	gui_base->add_child(custom_build_manage_templates);
 
 	file_android_build_source = memnew(EditorFileDialog);
-	file_android_build_source->set_title(TTR("Select android sources file"));
+	file_android_build_source->set_title(TTR("Select Android sources file"));
 	file_android_build_source->set_access(EditorFileDialog::ACCESS_FILESYSTEM);
 	file_android_build_source->set_file_mode(EditorFileDialog::FILE_MODE_OPEN_FILE);
 	file_android_build_source->add_filter("*.zip");

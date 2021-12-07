@@ -242,11 +242,13 @@ public:
 	enum SpaceParameter {
 		SPACE_PARAM_CONTACT_RECYCLE_RADIUS,
 		SPACE_PARAM_CONTACT_MAX_SEPARATION,
-		SPACE_PARAM_BODY_MAX_ALLOWED_PENETRATION,
+		SPACE_PARAM_CONTACT_MAX_ALLOWED_PENETRATION,
+		SPACE_PARAM_CONTACT_DEFAULT_BIAS,
 		SPACE_PARAM_BODY_LINEAR_VELOCITY_SLEEP_THRESHOLD,
 		SPACE_PARAM_BODY_ANGULAR_VELOCITY_SLEEP_THRESHOLD,
 		SPACE_PARAM_BODY_TIME_TO_SLEEP,
 		SPACE_PARAM_CONSTRAINT_DEFAULT_BIAS,
+		SPACE_PARAM_SOLVER_ITERATIONS,
 	};
 
 	virtual void space_set_param(RID p_space, SpaceParameter p_param, real_t p_value) = 0;
@@ -566,8 +568,6 @@ public:
 
 	virtual bool is_flushing_queries() const = 0;
 
-	virtual void set_collision_iterations(int p_iterations) = 0;
-
 	enum ProcessInfo {
 		INFO_ACTIVE_OBJECTS,
 		INFO_COLLISION_PAIRS,
@@ -758,10 +758,9 @@ class PhysicsServer2DManager {
 				name(p_ci.name),
 				create_callback(p_ci.create_callback) {}
 
-		ClassInfo &operator=(const ClassInfo &p_ci) {
+		void operator=(const ClassInfo &p_ci) {
 			name = p_ci.name;
 			create_callback = p_ci.create_callback;
-			return *this;
 		}
 	};
 

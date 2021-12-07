@@ -1089,7 +1089,7 @@ Vector<Ref<Image>> RendererStorageRD::texture_3d_get(RID p_texture) const {
 		const Texture::BufferSlice3D &bs = tex->buffer_slices_3d[i];
 		ERR_FAIL_COND_V(bs.offset >= (uint32_t)all_data.size(), Vector<Ref<Image>>());
 		ERR_FAIL_COND_V(bs.offset + bs.buffer_size > (uint32_t)all_data.size(), Vector<Ref<Image>>());
-		Vector<uint8_t> sub_region = all_data.subarray(bs.offset, bs.offset + bs.buffer_size - 1);
+		Vector<uint8_t> sub_region = all_data.slice(bs.offset, bs.offset + bs.buffer_size);
 
 		Ref<Image> img;
 		img.instantiate();
@@ -1225,6 +1225,100 @@ void RendererStorageRD::CanvasTexture::clear_sets() {
 
 RendererStorageRD::CanvasTexture::~CanvasTexture() {
 	clear_sets();
+}
+
+void RendererStorageRD::sampler_rd_configure_custom(float p_mipmap_bias) {
+	for (int i = 1; i < RS::CANVAS_ITEM_TEXTURE_FILTER_MAX; i++) {
+		for (int j = 1; j < RS::CANVAS_ITEM_TEXTURE_REPEAT_MAX; j++) {
+			RD::SamplerState sampler_state;
+			switch (i) {
+				case RS::CANVAS_ITEM_TEXTURE_FILTER_NEAREST: {
+					sampler_state.mag_filter = RD::SAMPLER_FILTER_NEAREST;
+					sampler_state.min_filter = RD::SAMPLER_FILTER_NEAREST;
+					sampler_state.max_lod = 0;
+				} break;
+				case RS::CANVAS_ITEM_TEXTURE_FILTER_LINEAR: {
+					sampler_state.mag_filter = RD::SAMPLER_FILTER_LINEAR;
+					sampler_state.min_filter = RD::SAMPLER_FILTER_LINEAR;
+					sampler_state.max_lod = 0;
+				} break;
+				case RS::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS: {
+					sampler_state.mag_filter = RD::SAMPLER_FILTER_NEAREST;
+					sampler_state.min_filter = RD::SAMPLER_FILTER_NEAREST;
+					if (GLOBAL_GET("rendering/textures/default_filters/use_nearest_mipmap_filter")) {
+						sampler_state.mip_filter = RD::SAMPLER_FILTER_NEAREST;
+					} else {
+						sampler_state.mip_filter = RD::SAMPLER_FILTER_LINEAR;
+					}
+					sampler_state.lod_bias = p_mipmap_bias;
+				} break;
+				case RS::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS: {
+					sampler_state.mag_filter = RD::SAMPLER_FILTER_LINEAR;
+					sampler_state.min_filter = RD::SAMPLER_FILTER_LINEAR;
+					if (GLOBAL_GET("rendering/textures/default_filters/use_nearest_mipmap_filter")) {
+						sampler_state.mip_filter = RD::SAMPLER_FILTER_NEAREST;
+					} else {
+						sampler_state.mip_filter = RD::SAMPLER_FILTER_LINEAR;
+					}
+					sampler_state.lod_bias = p_mipmap_bias;
+
+				} break;
+				case RS::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC: {
+					sampler_state.mag_filter = RD::SAMPLER_FILTER_NEAREST;
+					sampler_state.min_filter = RD::SAMPLER_FILTER_NEAREST;
+					if (GLOBAL_GET("rendering/textures/default_filters/use_nearest_mipmap_filter")) {
+						sampler_state.mip_filter = RD::SAMPLER_FILTER_NEAREST;
+					} else {
+						sampler_state.mip_filter = RD::SAMPLER_FILTER_LINEAR;
+					}
+					sampler_state.lod_bias = p_mipmap_bias;
+					sampler_state.use_anisotropy = true;
+					sampler_state.anisotropy_max = 1 << int(GLOBAL_GET("rendering/textures/default_filters/anisotropic_filtering_level"));
+				} break;
+				case RS::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC: {
+					sampler_state.mag_filter = RD::SAMPLER_FILTER_LINEAR;
+					sampler_state.min_filter = RD::SAMPLER_FILTER_LINEAR;
+					if (GLOBAL_GET("rendering/textures/default_filters/use_nearest_mipmap_filter")) {
+						sampler_state.mip_filter = RD::SAMPLER_FILTER_NEAREST;
+					} else {
+						sampler_state.mip_filter = RD::SAMPLER_FILTER_LINEAR;
+					}
+					sampler_state.lod_bias = p_mipmap_bias;
+					sampler_state.use_anisotropy = true;
+					sampler_state.anisotropy_max = 1 << int(GLOBAL_GET("rendering/textures/default_filters/anisotropic_filtering_level"));
+
+				} break;
+				default: {
+				}
+			}
+			switch (j) {
+				case RS::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED: {
+					sampler_state.repeat_u = RD::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE;
+					sampler_state.repeat_v = RD::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE;
+					sampler_state.repeat_w = RD::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE;
+
+				} break;
+				case RS::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED: {
+					sampler_state.repeat_u = RD::SAMPLER_REPEAT_MODE_REPEAT;
+					sampler_state.repeat_v = RD::SAMPLER_REPEAT_MODE_REPEAT;
+					sampler_state.repeat_w = RD::SAMPLER_REPEAT_MODE_REPEAT;
+				} break;
+				case RS::CANVAS_ITEM_TEXTURE_REPEAT_MIRROR: {
+					sampler_state.repeat_u = RD::SAMPLER_REPEAT_MODE_MIRRORED_REPEAT;
+					sampler_state.repeat_v = RD::SAMPLER_REPEAT_MODE_MIRRORED_REPEAT;
+					sampler_state.repeat_w = RD::SAMPLER_REPEAT_MODE_MIRRORED_REPEAT;
+				} break;
+				default: {
+				}
+			}
+
+			if (custom_rd_samplers[i][j].is_valid()) {
+				RD::get_singleton()->free(custom_rd_samplers[i][j]);
+			}
+
+			custom_rd_samplers[i][j] = RD::get_singleton()->sampler_create(sampler_state);
+		}
+	}
 }
 
 RID RendererStorageRD::canvas_texture_allocate() {
@@ -2558,7 +2652,17 @@ void RendererStorageRD::MaterialData::update_uniform_buffer(const Map<StringName
 		//regular uniform
 		uint32_t offset = p_uniform_offsets[E.value.order];
 #ifdef DEBUG_ENABLED
-		uint32_t size = ShaderLanguage::get_type_size(E.value.type);
+		uint32_t size = 0U;
+		// The following code enforces a 16-byte alignment of uniform arrays.
+		if (E.value.array_size > 0) {
+			size = ShaderLanguage::get_type_size(E.value.type) * E.value.array_size;
+			int m = (16 * E.value.array_size);
+			if ((size % m) != 0U) {
+				size += m - (size % m);
+			}
+		} else {
+			size = ShaderLanguage::get_type_size(E.value.type);
+		}
 		ERR_CONTINUE(offset + size > p_buffer_size);
 #endif
 		uint8_t *data = &p_buffer[offset];
@@ -9161,7 +9265,6 @@ void RendererStorageRD::_update_global_variables() {
 			ERR_CONTINUE(!material); //wtf
 
 			_material_queue_update(material, false, true);
-			print_line("update material texture?");
 		}
 
 		global_variables.must_update_texture_materials = false;
@@ -9774,6 +9877,9 @@ RendererStorageRD::RendererStorageRD() {
 		}
 	}
 
+	//custom sampler
+	sampler_rd_configure_custom(0.0f);
+
 	//default rd buffers
 	{
 		Vector<uint8_t> buffer;
@@ -9926,7 +10032,7 @@ RendererStorageRD::RendererStorageRD() {
 		actions.renames["RESTART"] = "restart";
 		actions.renames["CUSTOM"] = "PARTICLE.custom";
 		actions.renames["TRANSFORM"] = "PARTICLE.xform";
-		actions.renames["TIME"] = "FRAME.time";
+		actions.renames["TIME"] = "frame_history.data[0].time";
 		actions.renames["PI"] = _MKSTR(Math_PI);
 		actions.renames["TAU"] = _MKSTR(Math_TAU);
 		actions.renames["E"] = _MKSTR(Math_E);
@@ -10101,6 +10207,15 @@ RendererStorageRD::~RendererStorageRD() {
 	for (int i = 1; i < RS::CANVAS_ITEM_TEXTURE_FILTER_MAX; i++) {
 		for (int j = 1; j < RS::CANVAS_ITEM_TEXTURE_REPEAT_MAX; j++) {
 			RD::get_singleton()->free(default_rd_samplers[i][j]);
+		}
+	}
+
+	//custom samplers
+	for (int i = 1; i < RS::CANVAS_ITEM_TEXTURE_FILTER_MAX; i++) {
+		for (int j = 0; j < RS::CANVAS_ITEM_TEXTURE_REPEAT_MAX; j++) {
+			if (custom_rd_samplers[i][j].is_valid()) {
+				RD::get_singleton()->free(custom_rd_samplers[i][j]);
+			}
 		}
 	}
 

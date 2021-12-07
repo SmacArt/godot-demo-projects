@@ -302,7 +302,7 @@ void EditorFileDialog::_post_popup() {
 			bool exists = dir_access->dir_exists(recentd[i]);
 			if (!exists) {
 				// Remove invalid directory from the list of Recent directories.
-				recentd.remove(i--);
+				recentd.remove_at(i--);
 			} else {
 				recent->add_item(name, folder);
 				recent->set_item_metadata(recent->get_item_count() - 1, recentd[i]);
@@ -608,7 +608,8 @@ void EditorFileDialog::_item_list_item_rmb_selected(int p_item, const Vector2 &p
 	}
 
 	if (item_menu->get_item_count() > 0) {
-		item_menu->set_position(item_list->get_global_position() + p_pos);
+		item_menu->set_position(item_list->get_screen_position() + p_pos);
+		item_menu->reset_size();
 		item_menu->popup();
 	}
 }
@@ -629,7 +630,8 @@ void EditorFileDialog::_item_list_rmb_clicked(const Vector2 &p_pos) {
 	item_menu->add_separator();
 	item_menu->add_icon_item(item_list->get_theme_icon(SNAME("Filesystem"), SNAME("EditorIcons")), TTR("Open in File Manager"), ITEM_MENU_SHOW_IN_EXPLORER);
 
-	item_menu->set_position(item_list->get_global_position() + p_pos);
+	item_menu->set_position(item_list->get_screen_position() + p_pos);
+	item_menu->reset_size();
 	item_menu->popup();
 }
 
@@ -761,10 +763,11 @@ void EditorFileDialog::update_file_list() {
 	List<String> files;
 	List<String> dirs;
 
-	String item;
+	String item = dir_access->get_next();
 
-	while ((item = dir_access->get_next()) != "") {
+	while (!item.is_empty()) {
 		if (item == "." || item == "..") {
+			item = dir_access->get_next();
 			continue;
 		}
 
@@ -775,6 +778,7 @@ void EditorFileDialog::update_file_list() {
 				dirs.push_back(item);
 			}
 		}
+		item = dir_access->get_next();
 	}
 
 	dirs.sort_custom<NaturalNoCaseComparator>();
@@ -1445,7 +1449,7 @@ void EditorFileDialog::_save_to_recent() {
 	for (int i = 0; i < recent.size(); i++) {
 		bool cres = recent[i].begins_with("res://");
 		if (recent[i] == dir || (res == cres && count > max)) {
-			recent.remove(i);
+			recent.remove_at(i);
 			i--;
 		} else {
 			count++;

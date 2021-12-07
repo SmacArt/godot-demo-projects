@@ -164,7 +164,7 @@ void TabBar::gui_input(const Ref<InputEvent> &p_event) {
 
 		if (rb_pressing && !mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
 			if (rb_hover != -1) {
-				// pressed
+				// Right mouse button clicked.
 				emit_signal(SNAME("tab_rmb_clicked"), rb_hover);
 			}
 
@@ -174,7 +174,7 @@ void TabBar::gui_input(const Ref<InputEvent> &p_event) {
 
 		if (cb_pressing && !mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
 			if (cb_hover != -1) {
-				// pressed
+				// Close button pressed.
 				emit_signal(SNAME("tab_close_pressed"), cb_hover);
 			}
 
@@ -183,7 +183,7 @@ void TabBar::gui_input(const Ref<InputEvent> &p_event) {
 		}
 
 		if (mb->is_pressed() && (mb->get_button_index() == MouseButton::LEFT || (select_with_rmb && mb->get_button_index() == MouseButton::RIGHT))) {
-			// clicks
+			// Clicks.
 			Point2 pos = mb->get_position();
 
 			if (buttons_visible) {
@@ -235,7 +235,7 @@ void TabBar::gui_input(const Ref<InputEvent> &p_event) {
 					return;
 				}
 
-				if (tabs[i].cb_rect.has_point(pos)) {
+				if (tabs[i].cb_rect.has_point(pos) && (cb_displaypolicy == CLOSE_BUTTON_SHOW_ALWAYS || (cb_displaypolicy == CLOSE_BUTTON_SHOW_ACTIVE_ONLY && i == current))) {
 					cb_pressing = true;
 					update();
 					return;
@@ -285,7 +285,7 @@ void TabBar::_notification(int p_what) {
 				_shape(i);
 			}
 			_update_cache();
-			minimum_size_changed();
+			update_minimum_size();
 			update();
 		} break;
 		case NOTIFICATION_RESIZED: {
@@ -554,7 +554,7 @@ void TabBar::set_tab_title(int p_tab, const String &p_title) {
 	tabs.write[p_tab].text = p_title;
 	_shape(p_tab);
 	update();
-	minimum_size_changed();
+	update_minimum_size();
 }
 
 String TabBar::get_tab_title(int p_tab) const {
@@ -621,7 +621,7 @@ void TabBar::set_tab_icon(int p_tab, const Ref<Texture2D> &p_icon) {
 	ERR_FAIL_INDEX(p_tab, tabs.size());
 	tabs.write[p_tab].icon = p_icon;
 	update();
-	minimum_size_changed();
+	update_minimum_size();
 }
 
 Ref<Texture2D> TabBar::get_tab_icon(int p_tab) const {
@@ -645,7 +645,7 @@ void TabBar::set_tab_right_button(int p_tab, const Ref<Texture2D> &p_right_butto
 	tabs.write[p_tab].right_button = p_right_button;
 	_update_cache();
 	update();
-	minimum_size_changed();
+	update_minimum_size();
 }
 
 Ref<Texture2D> TabBar::get_tab_right_button(int p_tab) const {
@@ -659,7 +659,7 @@ void TabBar::_update_hover() {
 	}
 
 	const Point2 &pos = get_local_mouse_position();
-	// test hovering to display right or close button
+	// test hovering to display right or close button.
 	int hover_now = -1;
 	int hover_buttons = -1;
 	for (int i = offset; i < tabs.size(); i++) {
@@ -684,7 +684,7 @@ void TabBar::_update_hover() {
 		emit_signal(SNAME("tab_hovered"), hover);
 	}
 
-	if (hover_buttons == -1) { // no hover
+	if (hover_buttons == -1) { // No hover.
 		rb_hover = hover_buttons;
 		cb_hover = hover_buttons;
 	}
@@ -777,7 +777,7 @@ void TabBar::add_tab(const String &p_str, const Ref<Texture2D> &p_icon) {
 	_update_cache();
 	call_deferred(SNAME("_update_hover"));
 	update();
-	minimum_size_changed();
+	update_minimum_size();
 }
 
 void TabBar::clear_tabs() {
@@ -790,14 +790,14 @@ void TabBar::clear_tabs() {
 
 void TabBar::remove_tab(int p_idx) {
 	ERR_FAIL_INDEX(p_idx, tabs.size());
-	tabs.remove(p_idx);
+	tabs.remove_at(p_idx);
 	if (current >= p_idx) {
 		current--;
 	}
 	_update_cache();
 	call_deferred(SNAME("_update_hover"));
 	update();
-	minimum_size_changed();
+	update_minimum_size();
 
 	if (current < 0) {
 		current = 0;
@@ -860,7 +860,7 @@ bool TabBar::can_drop_data(const Point2 &p_point, const Variant &p_data) const {
 		if (from_path == to_path) {
 			return true;
 		} else if (get_tabs_rearrange_group() != -1) {
-			// drag and drop between other TabBars
+			// Drag and drop between other TabBars.
 			Node *from_node = get_node(from_path);
 			TabBar *from_tabs = Object::cast_to<TabBar>(from_node);
 			if (from_tabs && from_tabs->get_tabs_rearrange_group() == get_tabs_rearrange_group()) {
@@ -895,7 +895,7 @@ void TabBar::drop_data(const Point2 &p_point, const Variant &p_data) {
 			emit_signal(SNAME("active_tab_rearranged"), hover_now);
 			set_current_tab(hover_now);
 		} else if (get_tabs_rearrange_group() != -1) {
-			// drag and drop between Tabs
+			// Drag and drop between Tabs.
 			Node *from_node = get_node(from_path);
 			TabBar *from_tabs = Object::cast_to<TabBar>(from_node);
 			if (from_tabs && from_tabs->get_tabs_rearrange_group() == get_tabs_rearrange_group()) {
@@ -945,7 +945,7 @@ void TabBar::set_clip_tabs(bool p_clip_tabs) {
 	}
 	clip_tabs = p_clip_tabs;
 	update();
-	minimum_size_changed();
+	update_minimum_size();
 }
 
 bool TabBar::get_clip_tabs() const {
@@ -961,7 +961,7 @@ void TabBar::move_tab(int from, int to) {
 	ERR_FAIL_INDEX(to, tabs.size());
 
 	Tab tab_from = tabs[from];
-	tabs.remove(from);
+	tabs.remove_at(from);
 	tabs.insert(to, tab_from);
 
 	_update_cache();

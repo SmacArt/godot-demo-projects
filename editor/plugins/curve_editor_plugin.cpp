@@ -117,7 +117,7 @@ void CurveEditor::gui_input(const Ref<InputEvent> &p_event) {
 			switch (mb.get_button_index()) {
 				case MouseButton::RIGHT:
 					_context_click_pos = mpos;
-					open_context_menu(get_global_transform().xform(mpos));
+					open_context_menu(get_screen_position() + mpos);
 					break;
 
 				case MouseButton::MIDDLE:
@@ -460,7 +460,7 @@ void CurveEditor::remove_point(int index) {
 	Curve::Point p = _curve_ref->get_point(index);
 
 	ur.add_do_method(*_curve_ref, "remove_point", index);
-	ur.add_undo_method(*_curve_ref, "add_point", p.pos, p.left_tangent, p.right_tangent, p.left_mode, p.right_mode);
+	ur.add_undo_method(*_curve_ref, "add_point", p.position, p.left_tangent, p.right_tangent, p.left_mode, p.right_mode);
 
 	if (index == _selected_point) {
 		set_selected_point(-1);

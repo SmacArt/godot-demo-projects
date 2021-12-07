@@ -50,6 +50,9 @@ class GodotBody2D : public GodotCollisionObject2D {
 	Vector2 linear_velocity;
 	real_t angular_velocity = 0.0;
 
+	Vector2 prev_linear_velocity;
+	real_t prev_angular_velocity = 0.0;
+
 	Vector2 constant_linear_velocity;
 	real_t constant_angular_velocity = 0.0;
 
@@ -169,7 +172,7 @@ public:
 		if (index > -1) {
 			areas.write[index].refCount -= 1;
 			if (areas[index].refCount < 1) {
-				areas.remove(index);
+				areas.remove_at(index);
 			}
 		}
 	}
@@ -209,6 +212,9 @@ public:
 	_FORCE_INLINE_ void set_angular_velocity(real_t p_velocity) { angular_velocity = p_velocity; }
 	_FORCE_INLINE_ real_t get_angular_velocity() const { return angular_velocity; }
 
+	_FORCE_INLINE_ Vector2 get_prev_linear_velocity() const { return prev_linear_velocity; }
+	_FORCE_INLINE_ real_t get_prev_angular_velocity() const { return prev_angular_velocity; }
+
 	_FORCE_INLINE_ void set_biased_linear_velocity(const Vector2 &p_velocity) { biased_linear_velocity = p_velocity; }
 	_FORCE_INLINE_ Vector2 get_biased_linear_velocity() const { return biased_linear_velocity; }
 
@@ -228,9 +234,15 @@ public:
 		angular_velocity += _inv_inertia * p_torque;
 	}
 
-	_FORCE_INLINE_ void apply_bias_impulse(const Vector2 &p_impulse, const Vector2 &p_position = Vector2()) {
+	_FORCE_INLINE_ void apply_bias_impulse(const Vector2 &p_impulse, const Vector2 &p_position = Vector2(), real_t p_max_delta_av = -1.0) {
 		biased_linear_velocity += p_impulse * _inv_mass;
-		biased_angular_velocity += _inv_inertia * (p_position - center_of_mass).cross(p_impulse);
+		if (p_max_delta_av != 0.0) {
+			real_t delta_av = _inv_inertia * (p_position - center_of_mass).cross(p_impulse);
+			if (p_max_delta_av > 0 && delta_av > p_max_delta_av) {
+				delta_av = p_max_delta_av;
+			}
+			biased_angular_velocity += delta_av;
+		}
 	}
 
 	void set_active(bool p_active);

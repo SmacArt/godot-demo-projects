@@ -661,6 +661,7 @@ String ShaderCompilerRD::_dump_node_code(const SL::Node *p_node, int p_level, Ge
 						uniform_sizes.write[uniform.order] = _get_datatype_size(ShaderLanguage::TYPE_UINT);
 						uniform_alignments.write[uniform.order] = _get_datatype_alignment(ShaderLanguage::TYPE_UINT);
 					} else {
+						// The following code enforces a 16-byte alignment of uniform arrays.
 						if (uniform.array_size > 0) {
 							int size = _get_datatype_size(uniform.type) * uniform.array_size;
 							int m = (16 * uniform.array_size);
@@ -668,10 +669,11 @@ String ShaderCompilerRD::_dump_node_code(const SL::Node *p_node, int p_level, Ge
 								size += m - (size % m);
 							}
 							uniform_sizes.write[uniform.order] = size;
+							uniform_alignments.write[uniform.order] = 16;
 						} else {
 							uniform_sizes.write[uniform.order] = _get_datatype_size(uniform.type);
+							uniform_alignments.write[uniform.order] = _get_datatype_alignment(uniform.type);
 						}
-						uniform_alignments.write[uniform.order] = _get_datatype_alignment(uniform.type);
 					}
 				}
 
@@ -1315,6 +1317,9 @@ String ShaderCompilerRD::_dump_node_code(const SL::Node *p_node, int p_level, Ge
 					code += _dump_node_code(onode->arguments[2], p_level, r_gen_code, p_actions, p_default_actions, p_assigning);
 					code += ")";
 
+				} break;
+				case SL::OP_EMPTY: {
+					// Semicolon (or empty statement) - ignored.
 				} break;
 
 				default: {

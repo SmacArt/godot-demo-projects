@@ -227,7 +227,7 @@ void LineEdit::gui_input(const Ref<InputEvent> &p_event) {
 		}
 		if (b->is_pressed() && b->get_button_index() == MouseButton::RIGHT && context_menu_enabled) {
 			_ensure_menu();
-			menu->set_position(get_screen_transform().xform(get_local_mouse_position()));
+			menu->set_position(get_screen_position() + get_local_mouse_position());
 			menu->reset_size();
 			menu->popup();
 			grab_focus();
@@ -322,7 +322,7 @@ void LineEdit::gui_input(const Ref<InputEvent> &p_event) {
 					deselect();
 					selection.start_column = caret_column;
 					selection.creating = true;
-				} else if (selection.enabled) {
+				} else if (selection.enabled && !selection.double_click) {
 					selection.drag_attempt = true;
 				}
 			}
@@ -392,7 +392,7 @@ void LineEdit::gui_input(const Ref<InputEvent> &p_event) {
 			if (k->is_action("ui_menu", true)) {
 				_ensure_menu();
 				Point2 pos = Point2(get_caret_pixel_pos().x, (get_size().y + get_theme_font(SNAME("font"))->get_height(get_theme_font_size(SNAME("font_size")))) / 2);
-				menu->set_position(get_global_transform().xform(pos));
+				menu->set_position(get_screen_position() + pos);
 				menu->reset_size();
 				menu->popup();
 				menu->grab_focus();
@@ -588,13 +588,19 @@ void LineEdit::drop_data(const Point2 &p_point, const Variant &p_data) {
 	if (p_data.get_type() == Variant::STRING && is_editable()) {
 		set_caret_at_pixel_pos(p_point.x);
 		int caret_column_tmp = caret_column;
+		bool is_inside_sel = selection.enabled && caret_column >= selection.begin && caret_column <= selection.end;
+		if (Input::get_singleton()->is_key_pressed(Key::CTRL)) {
+			is_inside_sel = selection.enabled && caret_column > selection.begin && caret_column < selection.end;
+		}
 		if (selection.drag_attempt) {
 			selection.drag_attempt = false;
-			if (caret_column < selection.begin || caret_column > selection.end) {
-				if (caret_column_tmp > selection.end) {
-					caret_column_tmp = caret_column_tmp - (selection.end - selection.begin);
+			if (!is_inside_sel) {
+				if (!Input::get_singleton()->is_key_pressed(Key::CTRL)) {
+					if (caret_column_tmp > selection.end) {
+						caret_column_tmp = caret_column_tmp - (selection.end - selection.begin);
+					}
+					selection_delete();
 				}
-				selection_delete();
 
 				set_caret_column(caret_column_tmp);
 				insert_text_at_caret(p_data);
@@ -975,7 +981,7 @@ void LineEdit::_notification(int p_what) {
 			if (is_drag_successful()) {
 				if (selection.drag_attempt) {
 					selection.drag_attempt = false;
-					if (is_editable()) {
+					if (is_editable() && !Input::get_singleton()->is_key_pressed(Key::CTRL)) {
 						selection_delete();
 					} else if (deselect_on_focus_loss_enabled) {
 						deselect();
@@ -1712,7 +1718,7 @@ void LineEdit::set_editable(bool p_editable) {
 
 	editable = p_editable;
 
-	minimum_size_changed();
+	update_minimum_size();
 	update();
 }
 
@@ -1942,7 +1948,7 @@ void LineEdit::_editor_settings_changed() {
 
 void LineEdit::set_expand_to_text_length_enabled(bool p_enabled) {
 	expand_to_text_length = p_enabled;
-	minimum_size_changed();
+	update_minimum_size();
 	set_caret_column(caret_column);
 }
 
@@ -1956,7 +1962,7 @@ void LineEdit::set_clear_button_enabled(bool p_enabled) {
 	}
 	clear_button_enabled = p_enabled;
 	_fit_to_width();
-	minimum_size_changed();
+	update_minimum_size();
 	update();
 }
 
@@ -2017,7 +2023,7 @@ void LineEdit::set_right_icon(const Ref<Texture2D> &p_icon) {
 	}
 	right_icon = p_icon;
 	_fit_to_width();
-	minimum_size_changed();
+	update_minimum_size();
 	update();
 }
 
@@ -2081,7 +2087,7 @@ void LineEdit::_shape() {
 	Size2 size = TS->shaped_text_get_size(text_rid);
 
 	if ((expand_to_text_length && old_size.x != size.x) || (old_size.y != size.y)) {
-		minimum_size_changed();
+		update_minimum_size();
 	}
 }
 

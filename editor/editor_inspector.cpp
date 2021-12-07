@@ -1144,7 +1144,7 @@ void EditorInspectorSection::_test_unfold() {
 void EditorInspectorSection::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_THEME_CHANGED: {
-			minimum_size_changed();
+			update_minimum_size();
 		} break;
 		case NOTIFICATION_SORT_CHILDREN: {
 			if (!vbox_added) {
@@ -1555,7 +1555,7 @@ void EditorInspectorArray::_panel_gui_input(Ref<InputEvent> p_event, int p_index
 			popup_array_index_pressed = begin_array_index + p_index;
 			rmb_popup->set_item_disabled(OPTION_MOVE_UP, popup_array_index_pressed == 0);
 			rmb_popup->set_item_disabled(OPTION_MOVE_DOWN, popup_array_index_pressed == count - 1);
-			rmb_popup->set_position(mb->get_global_position());
+			rmb_popup->set_position(get_screen_position() + mb->get_position());
 			rmb_popup->reset_size();
 			rmb_popup->popup();
 		}
@@ -1608,11 +1608,11 @@ void EditorInspectorArray::_move_element(int p_element_index, int p_to_pos) {
 			properties_as_array.insert(p_to_pos < 0 ? properties_as_array.size() : p_to_pos, Dictionary());
 		} else if (p_to_pos < 0) {
 			// Delete the element.
-			properties_as_array.remove(p_element_index);
+			properties_as_array.remove_at(p_element_index);
 		} else {
 			// Move the element.
 			properties_as_array.insert(p_to_pos, properties_as_array[p_element_index].duplicate());
-			properties_as_array.remove(p_to_pos < p_element_index ? p_element_index + 1 : p_element_index);
+			properties_as_array.remove_at(p_to_pos < p_element_index ? p_element_index + 1 : p_element_index);
 		}
 
 		// Change the array size then set the properties.
@@ -1995,7 +1995,7 @@ void EditorInspectorArray::_notification(int p_what) {
 			prev_page_button->set_icon(get_theme_icon(SNAME("PagePrevious"), SNAME("EditorIcons")));
 			next_page_button->set_icon(get_theme_icon(SNAME("PageNext"), SNAME("EditorIcons")));
 			last_page_button->set_icon(get_theme_icon(SNAME("PageLast"), SNAME("EditorIcons")));
-			minimum_size_changed();
+			update_minimum_size();
 		} break;
 		case NOTIFICATION_DRAG_BEGIN: {
 			Dictionary dict = get_viewport()->gui_get_drag_data();
@@ -2194,10 +2194,7 @@ void EditorInspector::remove_inspector_plugin(const Ref<EditorInspectorPlugin> &
 	for (int i = idx; i < inspector_plugin_count - 1; i++) {
 		inspector_plugins[i] = inspector_plugins[i + 1];
 	}
-
-	if (idx == inspector_plugin_count - 1) {
-		inspector_plugins[idx] = Ref<EditorInspectorPlugin>();
-	}
+	inspector_plugins[inspector_plugin_count - 1] = Ref<EditorInspectorPlugin>();
 
 	inspector_plugin_count--;
 }

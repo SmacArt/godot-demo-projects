@@ -130,9 +130,8 @@ Char16String &Char16String::operator+=(char16_t p_char) {
 	return *this;
 }
 
-Char16String &Char16String::operator=(const char16_t *p_cstr) {
+void Char16String::operator=(const char16_t *p_cstr) {
 	copy_from(p_cstr);
-	return *this;
 }
 
 const char16_t *Char16String::get_data() const {
@@ -186,9 +185,8 @@ CharString &CharString::operator+=(char p_char) {
 	return *this;
 }
 
-CharString &CharString::operator=(const char *p_cstr) {
+void CharString::operator=(const char *p_cstr) {
 	copy_from(p_cstr);
-	return *this;
 }
 
 const char *CharString::get_data() const {
@@ -3670,15 +3668,15 @@ String String::simplify_path() const {
 	for (int i = 0; i < dirs.size(); i++) {
 		String d = dirs[i];
 		if (d == ".") {
-			dirs.remove(i);
+			dirs.remove_at(i);
 			i--;
 		} else if (d == "..") {
 			if (i == 0) {
-				dirs.remove(i);
+				dirs.remove_at(i);
 				i--;
 			} else {
-				dirs.remove(i);
-				dirs.remove(i - 1);
+				dirs.remove_at(i);
+				dirs.remove_at(i - 1);
 				i -= 2;
 			}
 		}

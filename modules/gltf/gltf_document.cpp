@@ -192,7 +192,7 @@ Error GLTFDocument::serialize(Ref<GLTFState> state, Node *p_root, const String &
 	uint64_t elapsed = OS::get_singleton()->get_ticks_usec() - begin_time;
 	float elapsed_sec = double(elapsed) / 1000000.0;
 	elapsed_sec = Math::snapped(elapsed_sec, 0.01f);
-	print_line("glTF: Export time elapsed seconds " + rtos(elapsed_sec).pad_decimals(2));
+	print_verbose("glTF: Export time elapsed seconds " + rtos(elapsed_sec).pad_decimals(2));
 
 	return OK;
 }
@@ -6115,7 +6115,10 @@ void GLTFDocument::_convert_mesh_instances(Ref<GLTFState> state) {
 			int bone_cnt = skeleton->get_bone_count();
 			ERR_FAIL_COND(bone_cnt != gltf_skeleton->joints.size());
 
-			ObjectID gltf_skin_key = skin->get_instance_id();
+			ObjectID gltf_skin_key;
+			if (skin.is_valid()) {
+				gltf_skin_key = skin->get_instance_id();
+			}
 			ObjectID gltf_skel_key = godot_skeleton->get_instance_id();
 			GLTFSkinIndex skin_gltf_i = -1;
 			GLTFNodeIndex root_gltf_i = -1;

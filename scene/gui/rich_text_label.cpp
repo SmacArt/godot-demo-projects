@@ -2190,7 +2190,7 @@ void RichTextLabel::_validate_line_caches(ItemFrame *p_frame) {
 		updating_scroll = false;
 
 		if (fit_content_height) {
-			minimum_size_changed();
+			update_minimum_size();
 		}
 		return;
 	}
@@ -2227,7 +2227,7 @@ void RichTextLabel::_validate_line_caches(ItemFrame *p_frame) {
 	updating_scroll = false;
 
 	if (fit_content_height) {
-		minimum_size_changed();
+		update_minimum_size();
 	}
 }
 
@@ -2324,7 +2324,7 @@ void RichTextLabel::_add_item(Item *p_item, bool p_enter, bool p_ensure_newline)
 	_invalidate_current_line(current_frame);
 
 	if (fixed_width != -1) {
-		minimum_size_changed();
+		update_minimum_size();
 	}
 }
 
@@ -2334,7 +2334,7 @@ void RichTextLabel::_remove_item(Item *p_item, const int p_line, const int p_sub
 		p_item->parent->subitems.erase(p_item);
 		// If a newline was erased, all lines AFTER the newline need to be decremented.
 		if (p_item->type == ITEM_NEWLINE) {
-			current_frame->lines.remove(p_line);
+			current_frame->lines.remove_at(p_line);
 			for (int i = 0; i < current->subitems.size(); i++) {
 				if (current->subitems[i]->line > p_subitem_line) {
 					current->subitems[i]->line--;
@@ -2423,7 +2423,7 @@ bool RichTextLabel::remove_line(const int p_line) {
 	}
 
 	if (!had_newline) {
-		current_frame->lines.remove(p_line);
+		current_frame->lines.remove_at(p_line);
 		if (current_frame->lines.size() == 0) {
 			current_frame->lines.resize(1);
 		}
@@ -2755,7 +2755,7 @@ void RichTextLabel::clear() {
 	}
 
 	if (fixed_width != -1) {
-		minimum_size_changed();
+		update_minimum_size();
 	}
 }
 
@@ -2772,7 +2772,7 @@ int RichTextLabel::get_tab_size() const {
 void RichTextLabel::set_fit_content_height(bool p_enabled) {
 	if (p_enabled != fit_content_height) {
 		fit_content_height = p_enabled;
-		minimum_size_changed();
+		update_minimum_size();
 	}
 }
 
@@ -3527,7 +3527,7 @@ void RichTextLabel::append_text(const String &p_bbcode) {
 				pos = brk_pos + 1;
 			} else {
 				String identifier = expr[0];
-				expr.remove(0);
+				expr.remove_at(0);
 				Dictionary properties = parse_expressions_for_values(expr);
 				Ref<RichTextEffect> effect = _get_custom_effect_by_code(identifier);
 
@@ -4268,7 +4268,7 @@ int RichTextLabel::get_total_character_count() const {
 
 void RichTextLabel::set_fixed_size_to_width(int p_width) {
 	fixed_width = p_width;
-	minimum_size_changed();
+	update_minimum_size();
 }
 
 Size2 RichTextLabel::get_minimum_size() const {

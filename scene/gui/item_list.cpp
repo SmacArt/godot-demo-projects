@@ -381,7 +381,7 @@ void ItemList::move_item(int p_from_idx, int p_to_idx) {
 	}
 
 	Item item = items[p_from_idx];
-	items.remove(p_from_idx);
+	items.remove_at(p_from_idx);
 	items.insert(p_to_idx, item);
 
 	update();
@@ -404,7 +404,7 @@ int ItemList::get_item_count() const {
 void ItemList::remove_item(int p_idx) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 
-	items.remove(p_idx);
+	items.remove_at(p_idx);
 	if (current == p_idx) {
 		current = -1;
 	}
@@ -1037,7 +1037,7 @@ void ItemList::_notification(int p_what) {
 				}
 			}
 
-			minimum_size_changed();
+			update_minimum_size();
 			shape_changed = false;
 		}
 
@@ -1663,7 +1663,7 @@ void ItemList::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_text_lines", PROPERTY_HINT_RANGE, "1,10,1,or_greater"), "set_max_text_lines", "get_max_text_lines");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "auto_height"), "set_auto_height", "has_auto_height");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "text_overrun_behavior", PROPERTY_HINT_ENUM, "Trim Nothing,Trim Characters,Trim Words,Ellipsis,Word Ellipsis"), "set_text_overrun_behavior", "get_text_overrun_behavior");
-	ADD_ARRAY_COUNT("Items", "items_count", "set_item_count", "get_item_count", "item_");
+	ADD_ARRAY_COUNT("Items", "item_count", "set_item_count", "get_item_count", "item_");
 	ADD_GROUP("Columns", "");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_columns", PROPERTY_HINT_RANGE, "0,10,1,or_greater"), "set_max_columns", "get_max_columns");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "same_column_width"), "set_same_column_width", "is_same_column_width");

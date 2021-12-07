@@ -598,7 +598,10 @@ bool TileMapEditorTilesPlugin::forward_canvas_gui_input(const Ref<InputEvent> &p
 				}
 
 				if (drag_type == DRAG_TYPE_CLIPBOARD_PASTE) {
-					// Do nothing.
+					// Cancel tile pasting on right-click
+					if (mb->get_button_index() == MouseButton::RIGHT) {
+						drag_type = DRAG_TYPE_NONE;
+					}
 				} else if (tool_buttons_group->get_pressed_button() == select_tool_button) {
 					drag_start_mouse_pos = mpos;
 					if (tile_map_selection.has(tile_map->world_to_map(drag_start_mouse_pos)) && !mb->is_shift_pressed()) {
@@ -3783,7 +3786,7 @@ void TileMapEditor::forward_canvas_draw_over_viewport(Control *p_overlay) {
 					}
 
 					// Draw the warning icon.
-					int min_axis = missing_tile_texture->get_size().min_axis();
+					Vector2::Axis min_axis = missing_tile_texture->get_size().min_axis_index();
 					Vector2 icon_size;
 					icon_size[min_axis] = tile_set->get_tile_size()[min_axis] / 3;
 					icon_size[(min_axis + 1) % 2] = (icon_size[min_axis] * missing_tile_texture->get_size()[(min_axis + 1) % 2] / missing_tile_texture->get_size()[min_axis]);

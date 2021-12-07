@@ -216,7 +216,7 @@ void PopupMenu::_activate_submenu(int p_over) {
 		submenu_pos.x = this_pos.x + submenu_size.width;
 	}
 
-	if (submenu_pos.x + submenu_size.width > get_parent_rect().size.width) {
+	if (submenu_pos.x + submenu_size.width > get_parent_rect().position.x + get_parent_rect().size.width) {
 		submenu_pos.x = this_pos.x - submenu_size.width;
 	}
 
@@ -1403,7 +1403,7 @@ void PopupMenu::remove_item(int p_idx) {
 		_unref_shortcut(items[p_idx].shortcut);
 	}
 
-	items.remove(p_idx);
+	items.remove_at(p_idx);
 	control->update();
 	child_controls_changed();
 }
@@ -1762,7 +1762,7 @@ void PopupMenu::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "submenu_popup_delay"), "set_submenu_popup_delay", "get_submenu_popup_delay");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "allow_search"), "set_allow_search", "get_allow_search");
 
-	ADD_ARRAY_COUNT("Items", "items_count", "set_item_count", "get_item_count", "item_");
+	ADD_ARRAY_COUNT("Items", "item_count", "set_item_count", "get_item_count", "item_");
 
 	ADD_SIGNAL(MethodInfo("id_pressed", PropertyInfo(Variant::INT, "id")));
 	ADD_SIGNAL(MethodInfo("id_focused", PropertyInfo(Variant::INT, "id")));

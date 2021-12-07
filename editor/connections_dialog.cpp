@@ -240,7 +240,7 @@ void ConnectDialog::_remove_bind() {
 	int idx = st.get_slice("/", 1).to_int() - 1;
 
 	ERR_FAIL_INDEX(idx, cdbinds->params.size());
-	cdbinds->params.remove(idx);
+	cdbinds->params.remove_at(idx);
 	cdbinds->notify_changed();
 }
 
@@ -723,7 +723,7 @@ void ConnectionsDock::_open_connection_dialog(TreeItem &item) {
 				c = '_';
 			} else {
 				// Remove any other characters.
-				midname.remove(i);
+				midname.remove_at(i);
 				i--;
 				continue;
 			}
@@ -838,13 +838,15 @@ void ConnectionsDock::_rmb_pressed(Vector2 position) {
 		return;
 	}
 
-	Vector2 global_position = tree->get_global_position() + position;
+	Vector2 screen_position = tree->get_screen_position() + position;
 
 	if (_is_item_signal(*item)) {
-		signal_menu->set_position(global_position);
+		signal_menu->set_position(screen_position);
+		signal_menu->reset_size();
 		signal_menu->popup();
 	} else {
-		slot_menu->set_position(global_position);
+		slot_menu->set_position(screen_position);
+		slot_menu->reset_size();
 		slot_menu->popup();
 	}
 }

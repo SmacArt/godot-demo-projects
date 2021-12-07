@@ -848,7 +848,7 @@ String TreeItem::get_button_tooltip(int p_column, int p_idx) const {
 void TreeItem::erase_button(int p_column, int p_idx) {
 	ERR_FAIL_INDEX(p_column, cells.size());
 	ERR_FAIL_INDEX(p_idx, cells[p_column].buttons.size());
-	cells.write[p_column].buttons.remove(p_idx);
+	cells.write[p_column].buttons.remove_at(p_idx);
 	_changed_notify(p_column);
 }
 
@@ -2532,7 +2532,7 @@ int Tree::propagate_mouse_event(const Point2i &p_pos, int x_ofs, int y_ofs, int 
 					}
 
 					popup_menu->set_size(Size2(col_width, 0));
-					popup_menu->set_position(get_global_position() + Point2i(col_ofs, _get_title_button_height() + y_ofs + item_h) - cache.offset);
+					popup_menu->set_position(get_screen_position() + Point2i(col_ofs, _get_title_button_height() + y_ofs + item_h) - cache.offset);
 					popup_menu->popup();
 					popup_edited_item = p_item;
 					popup_edited_item_col = col;
@@ -3441,7 +3441,7 @@ bool Tree::edit_selected() {
 		}
 
 		popup_menu->set_size(Size2(rect.size.width, 0));
-		popup_menu->set_position(get_global_position() + rect.position + Point2i(0, rect.size.height));
+		popup_menu->set_position(get_screen_position() + rect.position + Point2i(0, rect.size.height));
 		popup_menu->popup();
 		popup_edited_item = s;
 		popup_edited_item_col = col;
@@ -4370,7 +4370,7 @@ void Tree::scroll_to_item(TreeItem *p_item) {
 
 void Tree::set_h_scroll_enabled(bool p_enable) {
 	h_scroll_enabled = p_enable;
-	minimum_size_changed();
+	update_minimum_size();
 }
 
 bool Tree::is_h_scroll_enabled() const {
@@ -4379,7 +4379,7 @@ bool Tree::is_h_scroll_enabled() const {
 
 void Tree::set_v_scroll_enabled(bool p_enable) {
 	v_scroll_enabled = p_enable;
-	minimum_size_changed();
+	update_minimum_size();
 }
 
 bool Tree::is_v_scroll_enabled() const {
@@ -4830,6 +4830,7 @@ void Tree::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_allow_reselect"), &Tree::get_allow_reselect);
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "columns"), "set_columns", "get_columns");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "column_titles_visible"), "set_column_titles_visible", "are_column_titles_visible");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "allow_reselect"), "set_allow_reselect", "get_allow_reselect");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "allow_rmb_select"), "set_allow_rmb_select", "get_allow_rmb_select");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "hide_folding"), "set_hide_folding", "is_folding_hidden");
