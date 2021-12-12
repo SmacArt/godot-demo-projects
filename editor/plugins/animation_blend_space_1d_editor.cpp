@@ -223,7 +223,7 @@ void AnimationNodeBlendSpace1DEditor::_blend_space_draw() {
 		float x = point;
 
 		blend_space_draw->draw_line(Point2(x, s.height - 1), Point2(x, s.height - 5 * EDSCALE), linecolor);
-		blend_space_draw->draw_string(font, Point2(x + 2 * EDSCALE, s.height - 2 * EDSCALE - font->get_height(font_size) + font->get_ascent(font_size)), "0", HALIGN_LEFT, -1, font_size, linecolor);
+		blend_space_draw->draw_string(font, Point2(x + 2 * EDSCALE, s.height - 2 * EDSCALE - font->get_height(font_size) + font->get_ascent(font_size)), "0", HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, linecolor);
 		blend_space_draw->draw_line(Point2(x, s.height - 5 * EDSCALE), Point2(x, 0), linecolor_soft);
 	}
 
@@ -552,7 +552,7 @@ void AnimationNodeBlendSpace1DEditor::_notification(int p_what) {
 
 		if (error != error_label->get_text()) {
 			error_label->set_text(error);
-			if (error != String()) {
+			if (!error.is_empty()) {
 				error_panel->show();
 			} else {
 				error_panel->hide();

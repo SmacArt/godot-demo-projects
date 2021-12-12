@@ -1298,8 +1298,7 @@ EditorAudioBuses::EditorAudioBuses() {
 
 	bus_scroll = memnew(ScrollContainer);
 	bus_scroll->set_v_size_flags(SIZE_EXPAND_FILL);
-	bus_scroll->set_enable_h_scroll(true);
-	bus_scroll->set_enable_v_scroll(false);
+	bus_scroll->set_vertical_scroll_mode(ScrollContainer::SCROLL_MODE_DISABLED);
 	add_child(bus_scroll);
 	bus_hb = memnew(HBoxContainer);
 	bus_hb->set_v_size_flags(SIZE_EXPAND_FILL);
@@ -1423,7 +1422,7 @@ void EditorAudioMeterNotches::_draw_audio_notches() {
 					Vector2((line_length + label_space) * EDSCALE,
 							(1.0f - n.relative_position) * (get_size().y - btm_padding - top_padding) + (font_height / 4) + top_padding),
 					String::num(Math::abs(n.db_value)) + "dB",
-					HALIGN_LEFT, -1, font_size,
+					HORIZONTAL_ALIGNMENT_LEFT, -1, font_size,
 					notch_color);
 		}
 	}
